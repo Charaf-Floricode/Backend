@@ -6,7 +6,7 @@ from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import core logic from service modules
-from GPC import excel_import_python, run_access_queries
+from GPC import export_code_lists, load_to_postgres
 from Bio_Certificaat import main as certificate
 
 from APIData import strategy_direct_json
@@ -52,7 +52,7 @@ def api_import_excel():
         debug_steps.append("Floricode data fetch completed")
 
         debug_steps.append("Starting Excel import")
-        out_path = excel_import_python()
+        out_path = load_to_postgres()
         debug_steps.append(f"Excel import completed: {out_path}")
 
     except Exception as e:
@@ -71,7 +71,7 @@ def api_run_access():
     debug_steps = []
     try:
         debug_steps.append("Starting Access queries & export")
-        zip_path = run_access_queries()
+        zip_path = export_code_lists()
         debug_steps.append(f"Access export completed: {zip_path}")
 
     except Exception as e:

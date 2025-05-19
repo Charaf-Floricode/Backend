@@ -490,7 +490,9 @@ def export_code_lists():
         )
 
         print(f"   ✅ Wrote {len(df)} rows to {out_path.name}")
-if __name__ == "__main__":
-    #load_to_postgres()
+def main():
+    load_to_postgres()
     
     export_code_lists()
+if __name__ == "__main__":
+    main()
