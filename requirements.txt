@@ -9,11 +9,4 @@ openai
 sqlalchemy
 flask-sqlalchemy
 selenium
-os
-time
-datetime
-selenium
-bs4
-dotenv
-pathlib 
-csv
+
