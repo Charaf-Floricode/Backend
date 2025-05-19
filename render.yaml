@@ -1,0 +1,21 @@
+# render.yaml at repo root
+services:
+  - type: web
+    name: floricode-backend
+    repo: https://github.com/Charaf-Floricode/Floricode-Dashboard
+    branch: main
+
+    # Point Render into your app subfolder
+    workingDirectory: app
+
+    # Install deps from requirements.txt inside that folder
+    buildCommand: pip install -r requirements.txt
+
+    # Start your FastAPI app
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 8000
+
+    plan: free
+    envVars:
+      - key: FLORICODE_CLIENT_ID
+        sync: false
+      # …other secrets…
