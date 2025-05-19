@@ -9,4 +9,4 @@ openai
 sqlalchemy
 flask-sqlalchemy
 selenium
-
+bs4
