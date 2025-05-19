@@ -6,3 +6,5 @@ pyodbc
 python-dotenv
 requests
 openai
+sqlalchemy
+flask-sqlalchemy
