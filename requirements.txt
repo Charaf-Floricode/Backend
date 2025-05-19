@@ -8,3 +8,14 @@ requests
 openai
 sqlalchemy
 flask-sqlalchemy
+selenium
+json
+collections
+os
+time
+datetime
+selenium
+bs4
+dotenv
+pathlib 
+csv
