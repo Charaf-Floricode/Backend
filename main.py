@@ -22,7 +22,7 @@ router = APIRouter()
 # Allow CORS for React dev
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:8000/docs"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
