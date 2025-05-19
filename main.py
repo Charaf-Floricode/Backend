@@ -2,13 +2,14 @@
 import sys
 import logging
 from datetime import datetime
+from pathlib import Path
+import os
 from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import core logic from service modules
 from GPC import export_code_lists, load_to_postgres
 from Bio_Certificaat import main as certificate
-
 from APIData import strategy_direct_json
 
 # ─── FASTAPI SETUP ─────────────────────────────────────────────────────────
@@ -19,10 +20,10 @@ app = FastAPI(
 )
 router = APIRouter()
 
-# Allow CORS for React dev
+# Allow CORS broadly for now (adjust origins as needed)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8000/docs"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,15 +35,22 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s: %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)]
 )
-
 logger = logging.getLogger()
 
-# ─── ROUTES ────────────────────────────────────────────────────────────────
+# ─── ROOT & HEALTH ─────────────────────────────────────────────────────────
+@app.get("/", include_in_schema=False)
+async def root():
+    """
+    Simple root endpoint so `GET /` and `HEAD /` return 200.
+    """
+    return {"status": "ok"}
+
 @router.get("/health", tags=["Health"])
 def health_check():
     logger.info("Health check invoked")
     return {"status": "ok", "time": datetime.utcnow().isoformat()}
 
+# ─── AUTOMATIONS ────────────────────────────────────────────────────────────
 @router.post("/import/import-excel", tags=["Automations"])
 def api_import_excel():
     debug_steps = []
@@ -91,11 +99,12 @@ def api_run_biocertificate():
     try:
         debug_steps.append("Starting Data-Extraction ")
         certificate()
-        
+        debug_steps.append("Data-Extraction completed")
+
     except Exception as e:
         error_msg = str(e)
         debug_steps.append(f"Error occurred: {error_msg}")
-        logger.error(f"Data-Extraction  pipeline failed: {error_msg}")
+        logger.error(f"Data-Extraction pipeline failed: {error_msg}")
         raise HTTPException(
             status_code=500,
             detail={"error": error_msg, "debug": debug_steps}
@@ -103,15 +112,17 @@ def api_run_biocertificate():
 
     return {"message": "Data-Extraction voltooid", "debug": debug_steps}
 
-# Include the same router under BOTH /v1 and root (/) prefixes:
+# ─── ROUTER REGISTRATION ────────────────────────────────────────────────────
+# Include under both /v1 and root prefixes
 app.include_router(router, prefix="/v1")
 app.include_router(router, prefix="")
 
+# ─── Uvicorn LAUNCH (DEV ONLY) ─────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "main:app",     # or just app if you prefer
+        "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=int(os.getenv("PORT", 8000)),
         reload=True
     )
