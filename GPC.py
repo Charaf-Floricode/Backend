@@ -5,13 +5,16 @@ from openpyxl import load_workbook
 from datetime import datetime
 from sqlalchemy import create_engine, text, inspect
 import csv
-# --- CONFIGURATIE ---
+import os
+from dotenv import load_dotenv
+load_dotenv()
+DB_CONNECTION_STRING = os.getenv("RENDER_DATABASE_URL")
 TEMPLATE_PATH = Path(r"C:\Users\Floricode\Desktop\GPC code V2\GPC\Import_Florecompc2_template.xlsx")
 DATA_DIR      = Path(r"C:\Users\Floricode\Desktop\GPC code V2\GPC\Data")
 OUTPUT_DIR      = Path(r"C:\Users\Floricode\Desktop\GPC code V2\GPC\Output")
 FILLED_PATH   = Path(r"C:\Users\Floricode\Desktop\GPC code V2\GPC\Import_Florecompc2_filled.xlsx")
 
-DB_CONNECTION_STRING = (
+DB_CONNECTION_STRING_LOCAL = (
     "postgresql+psycopg2://floricode_user:"
     "Hoofddorp123@localhost:5432/floricode"
 )
