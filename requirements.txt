@@ -2,7 +2,7 @@ fastapi
 uvicorn[standard]
 pandas
 openpyxl
-tempfile
+
 webdriver-manager
 pyodbc
 python-dotenv
