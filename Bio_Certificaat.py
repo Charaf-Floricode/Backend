@@ -10,6 +10,7 @@ import time
 import tempfile
 import os
 from dotenv import load_dotenv
+from webdriver_manager.chrome import ChromeDriverManager
 load_dotenv()
 
 def extract_data():
@@ -24,8 +25,10 @@ def extract_data():
     # point at a fresh, writable profile dir
     temp_profile = tempfile.mkdtemp(prefix="selenium-profile-")
     options.add_argument(f'--user-data-dir={temp_profile}')
-    driver = webdriver.Chrome(options=options)
-
+    driver = webdriver.Chrome(
+        ChromeDriverManager().install(),
+        options=options
+    )
     # 3. Website openen
     driver.get('https://webgate.ec.europa.eu/tracesnt/directory/publication/organic-operator/index#!?sort=-issuedOn')
 
