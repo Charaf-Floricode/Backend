@@ -4,6 +4,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
 from bs4 import BeautifulSoup
 import pandas as pd
 import time
@@ -25,10 +26,8 @@ def extract_data():
     # point at a fresh, writable profile dir
     temp_profile = tempfile.mkdtemp(prefix="selenium-profile-")
     options.add_argument(f'--user-data-dir={temp_profile}')
-    driver = webdriver.Chrome(
-        ChromeDriverManager().install(),
-        options=options
-    )
+    service = Service(ChromeDriverManager().install())
+    driver  = webdriver.Chrome(service=service, options=options)
     # 3. Website openen
     driver.get('https://webgate.ec.europa.eu/tracesnt/directory/publication/organic-operator/index#!?sort=-issuedOn')
 
