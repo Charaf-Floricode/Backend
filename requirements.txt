@@ -2,6 +2,7 @@ fastapi
 uvicorn[standard]
 pandas
 openpyxl
+tempfile
 pyodbc
 python-dotenv
 requests

@@ -7,6 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import pandas as pd
 import time
+import tempfile
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -14,9 +15,15 @@ load_dotenv()
 def extract_data():
     # 1. Opties instellen
     options = Options()
-    options.add_argument('--start-maximized')
+    options.add_argument('--headless')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--window-size=1920,1080')
 
-    # 2. Driver starten
+    # point at a fresh, writable profile dir
+    temp_profile = tempfile.mkdtemp(prefix="selenium-profile-")
+    options.add_argument(f'--user-data-dir={temp_profile}')
     driver = webdriver.Chrome(options=options)
 
     # 3. Website openen
