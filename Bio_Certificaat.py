@@ -26,6 +26,7 @@ def extract_data():
     # point at a fresh, writable profile dir
     temp_profile = tempfile.mkdtemp(prefix="selenium-profile-")
     options.add_argument(f'--user-data-dir={temp_profile}')
+    options.binary_location = "/usr/bin/chromium" 
     service = Service(ChromeDriverManager().install())
     driver  = webdriver.Chrome(service=service, options=options)
     # 3. Website openen
