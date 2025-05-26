@@ -8,15 +8,14 @@ import csv
 import os
 from dotenv import load_dotenv
 load_dotenv()
-DB_CONNECTION_STRING = os.getenv("RENDER_DATABASE_URL")
+#DB_CONNECTION_STRING = os.getenv("RENDER_DATABASE_URL")
 TEMPLATE_PATH = Path(r"C:\Users\Floricode\Desktop\GPC code V2\GPC\Import_Florecompc2_template.xlsx")
 DATA_DIR      = Path(r"C:\Users\Floricode\Desktop\GPC code V2\GPC\Data")
 OUTPUT_DIR      = Path(r"C:\Users\Floricode\Desktop\GPC code V2\GPC\Output")
 FILLED_PATH   = Path(r"C:\Users\Floricode\Desktop\GPC code V2\GPC\Import_Florecompc2_filled.xlsx")
 
 DB_CONNECTION_STRING_LOCAL = (
-    "postgresql+psycopg2://floricode_user:"
-    "Hoofddorp123@localhost:5432/floricode"
+    "postgresql+psycopg2://floricode_user:Hoofddorp123@localhost:5432/floricode"
 )
 
 # 1) Sheet → bestands-prefix
@@ -281,7 +280,7 @@ def split_genus_species(s):
 def load_to_postgres():
     from sqlalchemy import create_engine, text
 
-    engine = create_engine(DB_CONNECTION_STRING)
+    engine = create_engine(DB_CONNECTION_STRING_LOCAL)
 
     # 0) Drop view so we can safely replace its base tables
     print("🔧 Droppen view Plant_Genus_Species (indien aanwezig)")
@@ -402,6 +401,12 @@ def load_to_postgres():
             print("   ▶ Kolom genusspecies_name voorbereid in DataFrame")
 
         df = normalize_and_translate(raw)
+        if name == "Bricks_With_Genus_Species":
+            df["gpc_application"] = pd.to_numeric(
+                df["gpc_application"], errors="coerce").astype("Int64")
+            df["brick_code"] = pd.to_numeric(          # ← add this
+                df["brick_code"], errors="coerce").astype("Int64")
+
 
         # cast numeric keys…
         if name == "Groups_With_Genus_Species":
@@ -458,7 +463,7 @@ CODE_LIST_NUMBERS = {
 }
 
 def export_code_lists():
-    engine = create_engine(DB_CONNECTION_STRING)
+    engine = create_engine(DB_CONNECTION_STRING_LOCAL)
     insp = inspect(engine)
     today = datetime.today().strftime("%Y%m%d")
 
@@ -490,9 +495,96 @@ def export_code_lists():
         )
 
         print(f"   ✅ Wrote {len(df)} rows to {out_path.name}")
+# ──────────────────── create SEGMENT / FAMILY / CLASS / BRICK / COLOR if absent
+def create_missing_code_lists(engine):
+    insp = inspect(engine)
+
+    # ---------------------------------------------------------------- SEGMENT-FAMILY-CLASS-BRICK
+    if "SEGMENT" not in insp.get_table_names():
+        engine.execute(text("""
+        CREATE TABLE "SEGMENT" AS
+        SELECT DISTINCT
+               30            AS code_list_id,
+               group_code    AS segment_code,
+               dutch_group_description AS segment_de,
+               NULL::date    AS entry_date,
+               NULL::date    AS expiry_date,
+               NULL::date    AS change_date
+        FROM   "_import_Groups_With_Genus_Species"
+        WHERE  (group_code % 1000000) = 0;
+        """))
+        print("✅ SEGMENT table created")
+
+    if "FAMILY" not in insp.get_table_names():
+        engine.execute(text("""
+        CREATE TABLE "FAMILY" AS
+        SELECT DISTINCT
+               31            AS code_list_id,
+               group_code    AS family_code,
+               dutch_group_description AS family_description,
+               NULL::date    AS entry_date,
+               NULL::date    AS expiry_date,
+               NULL::date    AS change_date
+        FROM   "_import_Groups_With_Genus_Species"
+        WHERE  (group_code % 10000) = 0
+          AND  (group_code % 1000000) <> 0;
+        """))
+        print("✅ FAMILY table created")
+
+    if "CLASS" not in insp.get_table_names():
+        engine.execute(text("""
+        CREATE TABLE "CLASS" AS
+        SELECT DISTINCT
+               32            AS code_list_id,
+               group_code    AS class_code,
+               dutch_group_description AS class_description,
+               NULL::date    AS entry_date,
+               NULL::date    AS expiry_date,
+               NULL::date    AS change_date
+        FROM   "_import_Groups_With_Genus_Species"
+        WHERE  (group_code % 100) = 0
+          AND  (group_code % 10000) <> 0;
+        """))
+        print("✅ CLASS table created")
+
+    if "BRICK" not in insp.get_table_names():
+        engine.execute(text("""
+        CREATE TABLE "BRICK" AS
+        SELECT DISTINCT
+               33          AS code_list_id,
+               brick_code  ,
+               brick_description,
+               NULL::date  AS entry_date,
+               NULL::date  AS expiry_date,
+               NULL::date  AS change_date
+        FROM   "_import_Bricks_With_Genus_Species";
+        """))
+        print("✅ BRICK table created")
+
+    # ---------------------------------------------------------------- COLOR
+    if "COLOR" not in insp.get_table_names():
+        engine.execute(text("""
+        CREATE TABLE "COLOR" AS
+        SELECT DISTINCT
+               20                   AS code_list_id,
+               kenmerkwaarde_id     AS rhs_color_it,
+               omschrijving         AS vbn_color_name,
+               ''                   AS vbn_sub_color_name,
+               '' AS RGB, '' AS red, '' AS green, '' AS blue,
+               '' AS upov_color_group, '' AS upov_color_name,
+               entry_date, expiry_date, change_date_time
+        FROM   "ATTRIBUTE_VALUE" v
+        JOIN   "ATTRIBUTE_TYPE"  t USING (kenmerktype_id)
+        WHERE  t.omschrijving ILIKE '%kleur%';
+        """))
+        print("✅ COLOR table created")
+
+    print("✨  All missing code-lists are now present")
+        
 def main():
+    engine = create_engine(DB_CONNECTION_STRING_LOCAL)
     load_to_postgres()
-    
+    create_missing_code_lists(engine)
     export_code_lists()
 if __name__ == "__main__":
     main()
