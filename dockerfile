@@ -1,17 +1,20 @@
 FROM python:3.10-slim
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends chromium fonts-liberation wget ca-certificates unzip && \
-    CHROME_MAJOR=$(chromium --version | awk '{print $2}' | cut -d'.' -f1) && \
-    wget -q https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROME_MAJOR}.0/linux64/chromedriver-linux64.zip -O /tmp/driver.zip && \
-    unzip /tmp/driver.zip -d /usr/local/bin && \
-    mv /usr/local/bin/chromedriver-linux64/chromedriver /usr/local/bin && \
-    chmod +x /usr/local/bin/chromedriver && \
-    rm -rf /var/lib/apt/lists/* /tmp/driver.zip
+# Prevent prompts during apt installs
+ENV DEBIAN_FRONTEND=noninteractive 
 
-ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver \
-    CHROME_BIN=/usr/lib/chromium/chromium
+# Install Chromium, Chromedriver, and related deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
+    chromium-driver \
+    && rm -rf /var/lib/apt/lists/*
 
+# Set environment variables to help Selenium find Chrome
+ENV CHROME_BIN="/usr/bin/chromium" 
+ENV CHROMEDRIVER_PATH="/usr/bin/chromedriver"
+
+# Symlink the Chrome binary to a name expected by Selenium (if needed)
+RUN ln -s /usr/bin/chromium /usr/bin/google-chrome
 
 
 # Symlink the Chrome binary to a name expected by Selenium (if needed)
