@@ -115,9 +115,13 @@ def api_run_biocertificate():
     return FileResponse(
         path=str(outfile),
         filename=Path(outfile).name,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        media_type=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        ),
+        headers={"Content-Disposition": f'attachment; filename="{outfile.name}"'}
     )
-        
+            
 
 
 # ─── Uvicorn LAUNCH (DEV ONLY) ─────────────────────────────────────────────

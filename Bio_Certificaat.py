@@ -16,49 +16,16 @@ from webdriver_manager.chrome import ChromeDriverManager
 load_dotenv()
 
 def extract_data():
-    # 1. Opties instellen
-    # 1. auto-install the right chromedriver into your PATH
+    chromedriver_path = os.getenv("CHROMEDRIVER_PATH")
+    service = Service(executable_path=chromedriver_path) if chromedriver_path else None
 
-
-
-    chromedriver_path = os.getenv("CHROMEDRIVER_PATH") or "/usr/bin/chromedriver"
-    print("DEBUG CHROMEDRIVER_PATH =", os.getenv("CHROMEDRIVER_PATH"),
-    "exists?", os.path.exists(os.getenv("CHROMEDRIVER_PATH", "")))
-    if not os.path.exists(chromedriver_path):
-        chromedriver_path = chromedriver_autoinstaller.install()   # local fallback
-    service = Service(executable_path=chromedriver_path)
-
-
-
-
-    # 2. configure headless Chromium
     options = Options()
-    # point at the container’s chromium binary
-    options.binary_location = "/usr/bin/chromium"  
-
-    # standard flags for headless + container compat
-    options.add_argument("--headless=new")   # ← replace --headless
+    options.binary_location = os.getenv("CHROME_BIN")
+    options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--disable-extensions")
-    options.add_argument("--disable-infobars")
-    options.add_argument("--disable-application-cache")
-    options.add_argument("--disable-setuid-sandbox")
-    options.add_argument("--remote-debugging-port=9222")
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument("--incognito")
-    options.add_argument(
-        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    )
 
-    # 3. give Chromium a fresh profile on each launch
-    profile_dir = tempfile.mkdtemp(prefix="chrome-profile-")
-    options.add_argument(f"--user-data-dir={profile_dir}")
-
-    # 4. wire up the Service to the autoinstalled driver
-    service = Service(executable_path=chromedriver_path)
+    
 
     # 5. launch!
     driver = webdriver.Chrome(service=service, options=options)
