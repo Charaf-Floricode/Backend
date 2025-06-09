@@ -16,23 +16,40 @@ load_dotenv()
 
 def extract_data():
     # 1. Opties instellen
-    opts = Options()
-    opts.add_argument("--headless=new")
-    opts.add_argument("--no-sandbox")
-    opts.add_argument("--disable-dev-shm-usage")
-    opts.add_argument("--window-size=1920,1080")
+    # 1. auto-install the right chromedriver into your PATH
+    chromedriver_path = chromedriver_autoinstaller.install()
 
-    # fresh, writable profile
-    profile_dir = tempfile.mkdtemp(prefix="selenium-profile-")
-    opts.add_argument(f"--user-data-dir={profile_dir}")
+    # 2. configure headless Chromium
+    options = Options()
+    # point at the container’s chromium binary
+    options.binary_location = "/usr/bin/chromium"  
 
-    # use the paths you set in the Dockerfile ENV
-    chrome_bin = os.getenv("CHROME_BIN", "/usr/lib/chromium/chromium")
-    driver_path = os.getenv("CHROMEDRIVER_PATH", "/usr/lib/chromium/chromedriver")
-    opts.binary_location = chrome_bin
-    service = Service(driver_path)
+    # standard flags for headless + container compat
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-infobars")
+    options.add_argument("--disable-application-cache")
+    options.add_argument("--disable-setuid-sandbox")
+    options.add_argument("--remote-debugging-port=9222")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--incognito")
+    options.add_argument(
+        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    )
 
-    driver = webdriver.Chrome(service=service, options=opts)
+    # 3. give Chromium a fresh profile on each launch
+    profile_dir = tempfile.mkdtemp(prefix="chrome-profile-")
+    options.add_argument(f"--user-data-dir={profile_dir}")
+
+    # 4. wire up the Service to the autoinstalled driver
+    service = Service(executable_path=chromedriver_path)
+
+    # 5. launch!
+    driver = webdriver.Chrome(service=service, options=options)
     # 3. Website openen
     driver.get('https://webgate.ec.europa.eu/tracesnt/directory/publication/organic-operator/index#!?sort=-issuedOn')
 
