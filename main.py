@@ -113,8 +113,7 @@ def api_run_biocertificate():
     return {"message": "Data-Extraction voltooid", "debug": debug_steps}
 
 # ─── ROUTER REGISTRATION ────────────────────────────────────────────────────
-# Include under both /v1 and root prefixes
-app.include_router(router, prefix="/v1")
+
 app.include_router(router, prefix="")
 
 # ─── Uvicorn LAUNCH (DEV ONLY) ─────────────────────────────────────────────
