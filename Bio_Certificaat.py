@@ -19,9 +19,12 @@ def extract_data():
     # 1. Opties instellen
     # 1. auto-install the right chromedriver into your PATH
     chromedriver_path = os.getenv("CHROMEDRIVER_PATH")          # set in Dockerfile
-    if not chromedriver_path or not os.path.exists(chromedriver_path):
-        # local dev fallback: download a matching driver into ~/.wdm
+    chromedriver_path = os.getenv("CHROMEDRIVER_PATH") or "/usr/lib/chromium/chromedriver"
+    if not os.path.exists(chromedriver_path):
+        # local laptop fallback
         chromedriver_path = chromedriver_autoinstaller.install()
+    service = Service(executable_path=chromedriver_path)
+
 
 
     # 2. configure headless Chromium
