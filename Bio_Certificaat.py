@@ -93,7 +93,19 @@ def extract_data():
 
     except Exception as e:
         print(f"⚠️ Fout opgetreden: {e}")
+        
+        wait.until(
+            lambda d: d.execute_script(
+                "return document.querySelectorAll('#organicOperatorCertificates tbody tr').length"
+            ) > 0
+        )
+        row_count = driver.execute_script(
+            "return document.querySelectorAll('#organicOperatorCertificates tbody tr').length"
+        )
+        print(f"✔️ Eerste batch geladen ({row_count} rijen).")
 
+    except Exception as e:
+        print(f"⚠️ Fout opgetreden: {e}")
     # 5. Scroll naar beneden om alle resultaten te laden
     SCROLL_PAUSE_TIME = 5
     last_height = driver.execute_script("return document.body.scrollHeight")

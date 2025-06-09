@@ -6,6 +6,7 @@ from pathlib import Path
 import os
 from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse      # ← NEW
 
 # Import core logic from service modules
 from GPC import export_code_lists, load_to_postgres
