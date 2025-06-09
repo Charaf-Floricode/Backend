@@ -13,8 +13,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV CHROME_BIN="/usr/bin/chromium" 
 ENV CHROMEDRIVER_PATH="/usr/bin/chromedriver"
 
-# Symlink the Chrome binary to a name expected by Selenium (if needed)
-RUN ln -s /usr/bin/chromium /usr/bin/google-chrome
 
 
 # Symlink the Chrome binary to a name expected by Selenium (if needed)
