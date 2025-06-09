@@ -45,13 +45,13 @@ def root():
     """
     return {"status": "ok"}
 
-@router.get("/health", tags=["Health"])
+@app.get("/health", tags=["Health"])
 def health_check():
     logger.info("Health check invoked")
     return {"status": "ok", "time": datetime.utcnow().isoformat()}
 
 # ─── AUTOMATIONS ────────────────────────────────────────────────────────────
-@router.post("/import/import-excel", tags=["Automations"])
+@app.post("/import/import-excel", tags=["Automations"])
 def api_import_excel():
     debug_steps = []
     try:
@@ -74,7 +74,7 @@ def api_import_excel():
 
     return {"message": "Excel-import voltooid", "file": str(out_path), "debug": debug_steps}
 
-@router.post("/access/run-access", tags=["Automations"])
+@app.post("/access/run-access", tags=["Automations"])
 def api_run_access():
     debug_steps = []
     try:
@@ -93,7 +93,7 @@ def api_run_access():
 
     return {"message": "Access-export voltooid", "zip": str(zip_path), "debug": debug_steps}
 
-@router.post("/biocertificate/scraper", tags=["Automations"])
+@app.post("/biocertificate/scraper", tags=["Automations"])
 def api_run_biocertificate():
     debug_steps = []
     try:
