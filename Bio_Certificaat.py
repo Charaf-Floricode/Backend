@@ -102,9 +102,6 @@ def extract_data():
         zoek_button.click()
         print("✔️ Zoeken knop geklikt.")
 
-    except Exception as e:
-        print(f"⚠️ Fout opgetreden: {e}")
-
         wait.until(
             lambda d: d.execute_script(
                 "return document.querySelectorAll('#organicOperatorCertificates tbody tr').length"
