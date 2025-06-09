@@ -114,7 +114,7 @@ def api_run_biocertificate():
 
     return FileResponse(
         path=str(outfile),
-        filename=outfile.name,
+        filename=Path(outfile).name,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
         

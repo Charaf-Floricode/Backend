@@ -208,5 +208,6 @@ def main():
     df_clean.to_excel(output_pad, index=False)
 
     print(f"✔️ Bestand dynamisch opgeschoond en opgeslagen als: {output_pad}")
+    return output_pad
 if __name__ == '__main__':
     main()
