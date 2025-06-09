@@ -20,6 +20,9 @@ def extract_data():
     # 1. auto-install the right chromedriver into your PATH
     chromedriver_path = os.getenv("CHROMEDRIVER_PATH")          # set in Dockerfile
     chromedriver_path = os.getenv("CHROMEDRIVER_PATH") or "/usr/lib/chromium/chromedriver"
+    print("DEBUG CHROMEDRIVER_PATH =", os.getenv("CHROMEDRIVER_PATH"),
+      "exists?", os.path.exists(os.getenv("CHROMEDRIVER_PATH", "")))
+
     if not os.path.exists(chromedriver_path):
         # local laptop fallback
         chromedriver_path = chromedriver_autoinstaller.install()
