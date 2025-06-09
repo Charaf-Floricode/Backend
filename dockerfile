@@ -3,11 +3,11 @@ FROM python:3.10-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     chromium-driver \
+    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables to help Selenium find Chrome
-ENV CHROME_BIN="/usr/bin/chromium" 
-ENV CHROMEDRIVER_PATH="/usr/bin/chromedriver"
+ENV CHROME_BIN=/usr/lib/chromium/chromium \
+    CHROMEDRIVER_PATH=/usr/lib/chromium/chromedriver
 
 # Symlink the Chrome binary to a name expected by Selenium (if needed)
 RUN ln -s /usr/bin/chromium /usr/bin/google-chrome
