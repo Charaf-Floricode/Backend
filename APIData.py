@@ -9,6 +9,8 @@ from datetime import date
 
 from dotenv import load_dotenv
 load_dotenv()
+CLIENT_ID     = os.getenv("Floricode_CLIENT")
+CLIENT_SECRET = os.getenv("Floricode_SECRET")
 OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
 
 """
@@ -58,8 +60,7 @@ import time
 
 def get_access_token():
     link    = 'https://api.floricode.com/oauth/token'
-    CLIENT_ID     = 'ProdFloricode'
-    CLIENT_SECRET = 'eHsQEBbV7KBM2JFabFWz'
+
     data = {
         'grant_type': 'client_credentials',
         'client_id': CLIENT_ID,
