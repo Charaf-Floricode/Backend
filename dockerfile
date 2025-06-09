@@ -1,14 +1,15 @@
-# 1) Start from a slim Python base
 FROM python:3.10-slim
 
-# 2) Install system deps including Chromium & its driver
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-      chromium chromium-driver \
- && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        chromium \
+        chromium-driver \
+        fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*
 
-# 3) Tell Selenium where Chrome lives
-ENV CHROME_BIN=/usr/bin/chromium
+ENV CHROME_BIN=/usr/lib/chromium/chromium \
+    CHROMEDRIVER_PATH=/usr/lib/chromium/chromedriver
+
 
 # 4) Create & switch to the app directory
 WORKDIR /app

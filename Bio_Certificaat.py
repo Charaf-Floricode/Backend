@@ -16,19 +16,23 @@ load_dotenv()
 
 def extract_data():
     # 1. Opties instellen
-    options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--window-size=1920,1080')
+    opts = Options()
+    opts.add_argument("--headless=new")
+    opts.add_argument("--no-sandbox")
+    opts.add_argument("--disable-dev-shm-usage")
+    opts.add_argument("--window-size=1920,1080")
 
-    # point at a fresh, writable profile dir
-    temp_profile = tempfile.mkdtemp(prefix="selenium-profile-")
-    options.add_argument(f'--user-data-dir={temp_profile}')
-    options.binary_location = "/usr/bin/chromium" 
-    service = Service(ChromeDriverManager().install())
-    driver  = webdriver.Chrome(service=service, options=options)
+    # fresh, writable profile
+    profile_dir = tempfile.mkdtemp(prefix="selenium-profile-")
+    opts.add_argument(f"--user-data-dir={profile_dir}")
+
+    # use the paths you set in the Dockerfile ENV
+    chrome_bin = os.getenv("CHROME_BIN", "/usr/lib/chromium/chromium")
+    driver_path = os.getenv("CHROMEDRIVER_PATH", "/usr/lib/chromium/chromedriver")
+    opts.binary_location = chrome_bin
+    service = Service(driver_path)
+
+    driver = webdriver.Chrome(service=service, options=opts)
     # 3. Website openen
     driver.get('https://webgate.ec.europa.eu/tracesnt/directory/publication/organic-operator/index#!?sort=-issuedOn')
 
