@@ -98,7 +98,13 @@ def api_run_biocertificate():
     debug_steps = []
     try:
         debug_steps.append("Starting Data-Extraction ")
-        certificate()
+        
+        outfile=certificate()                    # returns Path or str
+    return FileResponse(
+        path=str(outfile),
+        filename=outfile.name,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
         debug_steps.append("Data-Extraction completed")
 
     except Exception as e:
