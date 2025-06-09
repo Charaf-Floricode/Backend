@@ -116,7 +116,7 @@ def api_run_biocertificate():
         filename=outfile.name,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-        debug_steps.append("Data-Extraction completed")
+        
 
 
 # ─── Uvicorn LAUNCH (DEV ONLY) ─────────────────────────────────────────────
