@@ -100,12 +100,7 @@ def api_run_biocertificate():
         debug_steps.append("Starting Data-Extraction ")
         
         outfile=certificate()                    # returns Path or str
-    return FileResponse(
-        path=str(outfile),
-        filename=outfile.name,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-        debug_steps.append("Data-Extraction completed")
+
 
     except Exception as e:
         error_msg = str(e)
@@ -116,7 +111,12 @@ def api_run_biocertificate():
             detail={"error": error_msg, "debug": debug_steps}
         )
 
-    return {"message": "Data-Extraction voltooid", "debug": debug_steps}
+    return FileResponse(
+        path=str(outfile),
+        filename=outfile.name,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+        debug_steps.append("Data-Extraction completed")
 
 
 # ─── Uvicorn LAUNCH (DEV ONLY) ─────────────────────────────────────────────
