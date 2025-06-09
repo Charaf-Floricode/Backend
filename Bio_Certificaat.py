@@ -11,6 +11,7 @@ import time
 import tempfile
 import os
 from dotenv import load_dotenv
+import chromedriver_autoinstaller
 from webdriver_manager.chrome import ChromeDriverManager
 load_dotenv()
 

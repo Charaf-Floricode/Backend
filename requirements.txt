@@ -12,3 +12,4 @@ sqlalchemy
 flask-sqlalchemy
 selenium
 bs4
+chromedriver-autoinstaller
