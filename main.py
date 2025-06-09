@@ -119,7 +119,7 @@ def api_run_biocertificate():
             "application/vnd.openxmlformats-officedocument."
             "spreadsheetml.sheet"
         ),
-        headers={"Content-Disposition": f'attachment; filename="{outfile.name}"'}
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
             
 
