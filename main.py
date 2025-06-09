@@ -39,7 +39,7 @@ logger = logging.getLogger()
 
 # ─── ROOT & HEALTH ─────────────────────────────────────────────────────────
 @app.get("/", include_in_schema=False)
-async def root():
+def root():
     """
     Simple root endpoint so `GET /` and `HEAD /` return 200.
     """
@@ -112,9 +112,6 @@ def api_run_biocertificate():
 
     return {"message": "Data-Extraction voltooid", "debug": debug_steps}
 
-# ─── ROUTER REGISTRATION ────────────────────────────────────────────────────
-
-app.include_router(router, prefix="")
 
 # ─── Uvicorn LAUNCH (DEV ONLY) ─────────────────────────────────────────────
 if __name__ == "__main__":
