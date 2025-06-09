@@ -93,7 +93,7 @@ def api_run_access():
 
     return {"message": "Access-export voltooid", "zip": str(zip_path), "debug": debug_steps}
 
-@router.post("/biocertificate", tags=["Automations"])
+@router.post("/biocertificate/scraper", tags=["Automations"])
 def api_run_biocertificate():
     debug_steps = []
     try:
