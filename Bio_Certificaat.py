@@ -18,7 +18,11 @@ load_dotenv()
 def extract_data():
     # 1. Opties instellen
     # 1. auto-install the right chromedriver into your PATH
-    chromedriver_path = chromedriver_autoinstaller.install()
+    chromedriver_path = os.getenv("CHROMEDRIVER_PATH")          # set in Dockerfile
+    if not chromedriver_path or not os.path.exists(chromedriver_path):
+        # local dev fallback: download a matching driver into ~/.wdm
+        chromedriver_path = chromedriver_autoinstaller.install()
+
 
     # 2. configure headless Chromium
     options = Options()
@@ -93,7 +97,7 @@ def extract_data():
 
     except Exception as e:
         print(f"⚠️ Fout opgetreden: {e}")
-        
+
         wait.until(
             lambda d: d.execute_script(
                 "return document.querySelectorAll('#organicOperatorCertificates tbody tr').length"
