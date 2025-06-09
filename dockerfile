@@ -1,13 +1,16 @@
 FROM python:3.10-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    chromium \
-    chromium-driver \
-    fonts-liberation \
+        chromium \
+        chromium-driver \
+        fonts-liberation \
+    && which chromedriver || true && ls -lR /usr | grep chromedriver || true \
     && rm -rf /var/lib/apt/lists/*
 
-ENV CHROME_BIN=/usr/lib/chromium/chromium \
-    CHROMEDRIVER_PATH=/usr/lib/chromium/chromedriver
+
+ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver \
+    CHROME_BIN=/usr/lib/chromium/chromium
+
 
 
 # Symlink the Chrome binary to a name expected by Selenium (if needed)

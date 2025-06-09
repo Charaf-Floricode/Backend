@@ -18,15 +18,16 @@ load_dotenv()
 def extract_data():
     # 1. Opties instellen
     # 1. auto-install the right chromedriver into your PATH
-    chromedriver_path = os.getenv("CHROMEDRIVER_PATH")          # set in Dockerfile
-    chromedriver_path = os.getenv("CHROMEDRIVER_PATH") or "/usr/lib/chromium/chromedriver"
-    print("DEBUG CHROMEDRIVER_PATH =", os.getenv("CHROMEDRIVER_PATH"),
-      "exists?", os.path.exists(os.getenv("CHROMEDRIVER_PATH", "")))
 
+
+
+    chromedriver_path = os.getenv("CHROMEDRIVER_PATH") or "/usr/bin/chromedriver"
+    print("DEBUG CHROMEDRIVER_PATH =", os.getenv("CHROMEDRIVER_PATH"),
+    "exists?", os.path.exists(os.getenv("CHROMEDRIVER_PATH", "")))
     if not os.path.exists(chromedriver_path):
-        # local laptop fallback
-        chromedriver_path = chromedriver_autoinstaller.install()
+        chromedriver_path = chromedriver_autoinstaller.install()   # local fallback
     service = Service(executable_path=chromedriver_path)
+
 
 
 
@@ -36,7 +37,7 @@ def extract_data():
     options.binary_location = "/usr/bin/chromium"  
 
     # standard flags for headless + container compat
-    options.add_argument("--headless")
+    options.add_argument("--headless=new")   # ← replace --headless
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
