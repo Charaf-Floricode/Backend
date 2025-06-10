@@ -99,9 +99,13 @@ def api_run_biocertificate():
     debug_steps = []
     try:
         debug_steps.append("Starting Data-Extraction ")
-        
+        media_type=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        )
         outfile=certificate()                    # returns Path or str
-
+        path=str(outfile)
+        filename=Path(outfile).name
 
     except Exception as e:
         error_msg = str(e)
@@ -119,7 +123,7 @@ def api_run_biocertificate():
             "application/vnd.openxmlformats-officedocument."
             "spreadsheetml.sheet"
         ),
-        headers={f"Content-Disposition": f'attachment; filename="f{filename}"'}
+        headers={f"Content-Disposition": f'attachment; filename="{filename}"'}
     )
             
 
