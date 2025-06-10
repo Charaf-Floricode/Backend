@@ -143,7 +143,7 @@ def scrape_to_dataframe(headless: bool = True) -> pd.DataFrame:
         _click_when_clickable(
             wait,
             (By.XPATH, "//button[@type='submit' and contains(normalize-space(.),'Zoeken')]") ,
-            "Search",
+            "Submit",
         )
 
         # Wait until at least one result row appears in the certificates table
