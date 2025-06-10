@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 ENV CHROME_BIN=/usr/lib/chromium/chromium  
-
+ENV LOG_LEVEL=DEBUG
 
 WORKDIR /app
 COPY requirements.txt .
