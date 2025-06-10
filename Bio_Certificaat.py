@@ -35,7 +35,7 @@ OUTPUT_DIR = Path(os.getenv("BIO_CERT_OUT", "/tmp")).resolve()
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Default Selenium waits (seconds)
-PAGE_TIMEOUT = int(os.getenv("BIO_CERT_PAGE_TIMEOUT", "90"))
+PAGE_TIMEOUT = int(os.getenv("BIO_CERT_PAGE_TIMEOUT", "120"))
 WAIT_TIMEOUT = int(os.getenv("BIO_CERT_WAIT_TIMEOUT", "60"))
 SCROLL_PAUSE = float(os.getenv("BIO_CERT_SCROLL_PAUSE", "1.0"))
 
@@ -44,7 +44,7 @@ SCROLL_PAUSE = float(os.getenv("BIO_CERT_SCROLL_PAUSE", "1.0"))
 # -----------------------------------------------------------------------------
 
 def _get_chrome_driver(headless: bool = True) -> webdriver.Chrome:
-    """Return a configured Chrome WebDriver (auto‑downloads driver if needed)."""
+    """Return a configured Chrome WebDriver (lets Selenium Manager pick driver)."""
 
     opts = Options()
     if headless:
@@ -61,7 +61,7 @@ def _get_chrome_driver(headless: bool = True) -> webdriver.Chrome:
         if CHROME_DRIVER_PATH and Path(CHROME_DRIVER_PATH).exists():
             driver = webdriver.Chrome(options=opts, executable_path=CHROME_DRIVER_PATH)
         else:
-            driver = webdriver.Chrome(options=opts)  # Selenium Manager
+            driver = webdriver.Chrome(options=opts)
     except WebDriverException:
         logger.exception("Failed to launch ChromeDriver")
         raise
@@ -71,7 +71,6 @@ def _get_chrome_driver(headless: bool = True) -> webdriver.Chrome:
 
 
 def _capture_artifacts(driver: webdriver.Chrome, prefix: str) -> None:
-    """Save screenshot + HTML to OUTPUT_DIR with UTC timestamp."""
     ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
     png = OUTPUT_DIR / f"{prefix}_{ts}.png"
     html = OUTPUT_DIR / f"{prefix}_{ts}.html"
@@ -88,174 +87,119 @@ def _wait_for_loader_gone(wait: WebDriverWait) -> None:
         logger.warning("Loader still visible after timeout – proceeding anyway")
 
 
-def _click_first(
-    wait: WebDriverWait,
-    driver: webdriver.Chrome,
-    locator_options: List[Tuple[By, str]],
-    description: str,
-    root=None,
-):
-    """Attempt to click the first locator that appears, trying all options in order."""
-    ctx = root if root is not None else driver
-    for by, sel in locator_options:
-        try:
-            logger.debug("Waiting for %s via %s:%s", description, by, sel)
-            elem = wait.until(EC.element_to_be_clickable((by, sel)))
-            if root and not root.is_displayed():
-                continue  # hidden duplicate inside template
-            elem.click()
-            logger.debug("Clicked %s via %s", description, sel)
-            return
-        except TimeoutException:
-            continue
-    raise TimeoutException(f"Could not find {description} via any locator")
+def _click_when_clickable(wait: WebDriverWait, locator: Tuple[By, str], desc: str):
+    logger.debug("Waiting for %s via %s:%s", desc, locator[0], locator[1])
+    elem = wait.until(EC.element_to_be_clickable(locator))
+    elem.click()
+    logger.debug("Clicked %s", desc)
 
 
-def _accept_cookies_if_present(driver: webdriver.Chrome, wait: WebDriverWait) -> None:
-    """Click the cookie banner accept button if it exists (non‑blocking)."""
+def _accept_cookies_if_present(driver: webdriver.Chrome, wait: WebDriverWait):
     try:
-        cookie_btn = wait.until(
+        btn = wait.until(
             EC.element_to_be_clickable(
                 (
                     By.CSS_SELECTOR,
-                    "button#onetrust-accept-btn-handler, button[data-testid='uc-accept-all']",
+                    "a.wt-cck--actions-button, button#onetrust-accept-btn-handler",
                 )
             )
         )
-        cookie_btn.click()
+        btn.click()
         logger.debug("Cookie banner accepted")
     except TimeoutException:
-        pass  # No banner
-
+        pass  # no cookie banner
 
 # -----------------------------------------------------------------------------
 # Core scrape logic
 # -----------------------------------------------------------------------------
 
-def _scroll_to_load_all(driver: webdriver.Chrome) -> None:
-    """Scroll inside the results table until no new rows appear."""
-    prev_len = -1
+def _scroll_to_load_all(driver: webdriver.Chrome):
+    previous = -1
     while True:
-        rows = driver.find_elements(By.CSS_SELECTOR, "table tbody tr")
-        if len(rows) == prev_len:
-            break  # no new rows after last scroll
-        prev_len = len(rows)
+        rows = driver.find_elements(By.CSS_SELECTOR, "table#organicOperatorCertificates tbody tr")
+        if len(rows) == previous:
+            break
+        previous = len(rows)
         if rows:
             driver.execute_script("arguments[0].scrollIntoView();", rows[-1])
         else:
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(SCROLL_PAUSE)
-    logger.info("Infinite scroll yielded %d total rows", prev_len)
+    logger.info("Infinite scroll collected %d rows", previous)
 
 
 def scrape_to_dataframe(headless: bool = True) -> pd.DataFrame:
-    """Scrape the TRACES organic certificate directory → DataFrame."""
-
     driver = _get_chrome_driver(headless)
     wait = WebDriverWait(driver, WAIT_TIMEOUT)
 
     try:
-        logger.info("Navigating → %s", BIO_CERT_URL)
+        logger.info("Opening %s", BIO_CERT_URL)
         driver.get(BIO_CERT_URL)
 
         _wait_for_loader_gone(wait)
         _accept_cookies_if_present(driver, wait)
 
-        # Scope to main listing form – avoids hidden dupes in templates
-        listing_form = wait.until(EC.presence_of_element_located((By.ID, "organicOperatorCertificateListingSearch")))
-
-        # Optional: expand Advanced Search (not strictly needed for unfiltered search)
-        try:
-            _click_first(
-                wait,
-                driver,
-                [
-                    (By.CSS_SELECTOR, "button[ng-click='toggleAdvancedSearch()']"),
-                    (
-                        By.XPATH,
-                        "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'advanced search') or contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'geavanceerd zoeken')]",
-                    ),
-                ],
-                "Advanced Search button",
-                root=listing_form,
-            )
-        except TimeoutException:
-            logger.debug("Advanced Search button not found – continuing without it")
-
-        # Click the main Search (Zoeken) button to run the query
-        _click_first(
+        # Click the primary "Zoeken" button to fetch results (no filters)
+        _click_when_clickable(
             wait,
-            driver,
-            [
-                (By.CSS_SELECTOR, "form#organicOperatorCertificateListingSearch button[type='submit'].btn-primary"),
-                (By.XPATH, "//button[(@type='submit') and contains(.,'Zoeken')]"),
-            ],
+            (By.XPATH, "//button[@type='submit' and contains(normalize-space(.),'Zoeken')]") ,
             "Search button",
-            root=listing_form,
         )
 
-        # Wait for at least one result row
+        # Wait until at least one result row appears in the certificates table
         wait.until(
             EC.presence_of_element_located(
-                (
-                    By.CSS_SELECTOR,
-                    "table tbody tr",
-                )
+                (By.CSS_SELECTOR, "table#organicOperatorCertificates tbody tr")
             )
         )
 
-        # Infinite scroll until all rows are loaded
         _scroll_to_load_all(driver)
 
-        rows = driver.find_elements(By.CSS_SELECTOR, "table tbody tr")
+        rows = driver.find_elements(By.CSS_SELECTOR, "table#organicOperatorCertificates tbody tr")
         if not rows:
-            raise RuntimeError("0 rows scraped – layout change or access blocked.")
+            raise RuntimeError("0 rows scraped – layout or access issue")
 
         records: List[Dict[str, str]] = []
         for row in rows:
             cells = row.find_elements(By.CSS_SELECTOR, "td")
-            if len(cells) < 6:
-                continue  # skip malformed rows
+            if len(cells) < 8:
+                continue
             records.append(
                 {
-                    "operator": cells[0].text.strip(),
-                    "country": cells[1].text.strip(),
-                    "control_body": cells[2].text.strip(),
-                    "certificate": cells[3].text.strip(),
-                    "scope": cells[4].text.strip(),
-                    "validity": cells[5].text.strip(),
+                    "reference": cells[0].text.strip(),
+                    "operator": cells[1].text.strip(),
+                    "authority": cells[2].text.strip(),
+                    "activities": cells[3].text.strip(),
+                    "product_categories": cells[4].text.strip(),
+                    "issued_on": cells[5].text.strip(),
+                    "expires_on": cells[6].text.strip(),
                 }
             )
 
         df = pd.DataFrame(records)
-        logger.info("Scraped %d certificate rows", len(df))
+        logger.info("Scraped %d certificates", len(df))
         return df
 
-    except TimeoutException as exc:
-        logger.error("Timeout while scraping → %s", exc.msg if hasattr(exc, 'msg') else exc)
-        _capture_artifacts(driver, "timeout_error")
-        raise
     except Exception:
-        logger.exception("Unhandled scraping error")
-        _capture_artifacts(driver, "generic_error")
+        logger.exception("Scraping failed – capturing artifacts")
+        _capture_artifacts(driver, "scrape_error")
         raise
     finally:
         driver.quit()
-
 
 # -----------------------------------------------------------------------------
 # IO helpers
 # -----------------------------------------------------------------------------
 
-def save_dataframe_to_excel(df: pd.DataFrame, output_path: Path) -> None:
+def save_dataframe_to_excel(df: pd.DataFrame, output_path: Path):
     if df.empty:
-        raise ValueError("DataFrame empty – refusing to write empty Excel file.")
+        raise ValueError("DataFrame is empty – refusing to save.")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_excel(output_path, index=False)
-    logger.info("Excel saved → %s", output_path)
+    logger.info("Excel written → %s", output_path)
 
 
-def main() -> None:
+def main():
     df = scrape_to_dataframe(headless=True)
     ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     save_dataframe_to_excel(df, OUTPUT_DIR / f"bio_certificates_{ts}.xlsx")
