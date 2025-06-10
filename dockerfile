@@ -5,13 +5,18 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install Chromium, Chromedriver, and related deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    chromium \
-    chromium-driver \
-    && rm -rf /var/lib/apt/lists/*
+        chromium fonts-liberation wget unzip ca-certificates && \
+    CHROME_MAJOR=$(chromium --version | awk '{print $2}' | cut -d'.' -f1) && \
+    wget -q "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROME_MAJOR}.0/linux64/chromedriver-linux64.zip" \
+        -O /tmp/driver.zip && \
+    unzip /tmp/driver.zip -d /usr/local/bin && \
+    mv /usr/local/bin/chromedriver-linux64/chromedriver /usr/local/bin && \
+    chmod +x /usr/local/bin/chromedriver && \
+    rm -rf /var/lib/apt/lists/* /tmp/driver.zip
 
-# Set environment variables to help Selenium find Chrome
-ENV CHROME_BIN="/usr/bin/chromium" 
-ENV CHROMEDRIVER_PATH="/usr/bin/chromedriver"
+ENV CHROME_BIN=/usr/lib/chromium/chromium \
+    CHROMEDRIVER_PATH=/usr/local/bin/chromedriver
+
 
 
 
