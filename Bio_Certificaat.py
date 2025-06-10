@@ -35,9 +35,9 @@ OUTPUT_DIR = Path(os.getenv("BIO_CERT_OUT", "/tmp")).resolve()
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Default Selenium waits (seconds)
-PAGE_TIMEOUT = int(os.getenv("BIO_CERT_PAGE_TIMEOUT", "120"))
-WAIT_TIMEOUT = int(os.getenv("BIO_CERT_WAIT_TIMEOUT", "60"))
-SCROLL_PAUSE = float(os.getenv("BIO_CERT_SCROLL_PAUSE", "1.0"))
+PAGE_TIMEOUT = int(os.getenv("BIO_CERT_PAGE_TIMEOUT", "240"))
+WAIT_TIMEOUT = int(os.getenv("BIO_CERT_WAIT_TIMEOUT", "120"))
+SCROLL_PAUSE = float(os.getenv("BIO_CERT_SCROLL_PAUSE", "5.0"))
 
 # -----------------------------------------------------------------------------
 # Helpers
@@ -143,7 +143,7 @@ def scrape_to_dataframe(headless: bool = True) -> pd.DataFrame:
         _click_when_clickable(
             wait,
             (By.XPATH, "//button[@type='submit' and contains(normalize-space(.),'Zoeken')]") ,
-            "Search button",
+            "Search",
         )
 
         # Wait until at least one result row appears in the certificates table
