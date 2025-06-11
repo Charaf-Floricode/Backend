@@ -1,7 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -13,21 +12,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def extract_data():
-    chrome_bin  = os.getenv("CHROME_BIN")
-    driver_path = os.getenv("CHROMEDRIVER_PATH")
-
+    # 1. Opties instellen
     options = Options()
-    options.binary_location = chrome_bin
-    options.add_argument("--headless=new")          # modern flag
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument("--incognito")
+    options.add_argument('--headless')
+    options.add_argument('--start-maximized')
 
-    driver = webdriver.Chrome(
-        service=Service(executable_path=driver_path),
-        options=options,
-    )
+    # 2. Driver starten
+    driver = webdriver.Chrome(options=options)
 
     # 3. Website openen
     driver.get('https://webgate.ec.europa.eu/tracesnt/directory/publication/organic-operator/index#!?sort=-issuedOn')
