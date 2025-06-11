@@ -28,12 +28,13 @@ def extract_data():
         service=Service(executable_path=driver_path),
         options=options,
     )
-
+    driver.set_page_load_timeout(90)
+    driver.set_script_timeout(90)
     # 3. Website openen
     driver.get('https://webgate.ec.europa.eu/tracesnt/directory/publication/organic-operator/index#!?sort=-issuedOn')
 
     try:
-        wait = WebDriverWait(driver, 10)
+        wait = WebDriverWait(driver, 20)
 
         # Stap 1: Klik op "Geavanceerd zoeken"
         geavanceerd_zoeken_knop = wait.until(
@@ -73,7 +74,7 @@ def extract_data():
         print(f"⚠️ Fout opgetreden: {e}")
 
     # 5. Scroll naar beneden om alle resultaten te laden
-    SCROLL_PAUSE_TIME = 5
+    SCROLL_PAUSE_TIME = 2
     last_height = driver.execute_script("return document.body.scrollHeight")
 
     while True:
