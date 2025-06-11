@@ -2,21 +2,30 @@
 import sys
 import logging
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
+import pandas as pd
+import zipfile
+import pathlib
+import tempfile
 import os
 from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse      # ← NEW
+from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse     # ← NEW
 
 # Import core logic from service modules
+from BedrijfLocatiecodering.bedrijfscodering import bedrijfscodering as proc_bedrijf
+from BedrijfLocatiecodering.locatiecodering import locatiecodering as proc_locatie
+from BedrijfLocatiecodering.sharepoint import fetch_bedrijf_df, fetch_locatie_df
 from GPC import export_code_lists, load_to_postgres
 from Bio_Certificaat import main as certificate
 from APIData import strategy_direct_json
 
 # ─── FASTAPI SETUP ─────────────────────────────────────────────────────────
 app = FastAPI(
-    title="GPC Automations API",
-    description="API voor Excel-imports, Access-exports en Floricode-queries",
+    title="Floricode",
+    description="Floricode automatiseringen en Dashboard",
     version="1.0.0"
 )
 router = APIRouter()
@@ -126,6 +135,43 @@ def api_run_biocertificate():
         headers={f"Content-Disposition": f'attachment; filename="{filename}"'}
     )
             
+@app.post("/bedrijflocatie/rfh", tags=["Automations"])
+def download_coderingen():
+            # 1) run jouw bestaande logica
+    df_loc = fetch_locatie_df()   
+    df_bedrijf = fetch_bedrijf_df()
+    if df_bedrijf is None or df_loc is None:
+        raise HTTPException(404, "Geen data gevonden voor bedrijf of locatie")
+
+    try:
+        # 2️⃣  Data verwerken → DataFrames
+        bedrijf_df             = proc_bedrijf(df_bedrijf)   # DataFrame
+        locatie1_df, locatie2_df = proc_locatie(df_loc)     # twee DataFrames
+
+        # 3️⃣  Zip opbouwen in geheugen
+        mem_zip = BytesIO()
+        with zipfile.ZipFile(mem_zip, "w", zipfile.ZIP_DEFLATED) as zf:
+            # helper om DF als Excel-bytes te schrijven
+            def add_df_to_zip(df, name: str):
+                buf = BytesIO()
+                df.to_excel(buf, index=False, engine="openpyxl")
+                buf.seek(0)
+                zf.writestr(name, buf.read())
+
+            add_df_to_zip(bedrijf_df,  "bedrijfscodering.xlsx")
+            add_df_to_zip(locatie1_df, "locatiecodering_1.xlsx")
+            add_df_to_zip(locatie2_df, "locatiecodering_2.xlsx")
+
+        mem_zip.seek(0)
+
+
+    except Exception as exc:
+        logging.exception("Coderingen genereren mislukte")
+        raise HTTPException(500, f"Fout: {exc}")
+
+    # 4️⃣  Zip streamen naar de browser
+    headers = {"Content-Disposition": 'attachment; filename="coderingen.zip"'}
+    return StreamingResponse(mem_zip, media_type="application/zip", headers=headers)
 
 
 # ─── Uvicorn LAUNCH (DEV ONLY) ─────────────────────────────────────────────

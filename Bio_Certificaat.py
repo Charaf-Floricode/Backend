@@ -13,23 +13,26 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def extract_data():
-    chrome_bin  = os.getenv("CHROME_BIN")
-    driver_path = os.getenv("CHROMEDRIVER_PATH")
+    #chrome_bin  = os.getenv("CHROME_BIN")
+    #driver_path = os.getenv("CHROMEDRIVER_PATH")
 
     options = Options()
-    options.binary_location = chrome_bin
-    options.add_argument("--headless=new")          # modern flag
+    #options.binary_location = chrome_bin
+    #options.add_argument("--headless=new")          # modern flag
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--incognito")
 
+    #driver = webdriver.Chrome(
+    #    service=Service(executable_path=driver_path),
+    #    options=options,
+    #)
     driver = webdriver.Chrome(
-        service=Service(executable_path=driver_path),
-        options=options,
+        options=options
     )
-    driver.set_page_load_timeout(300)
-    driver.set_script_timeout(300)
+    driver.set_page_load_timeout(2000)
+    driver.set_script_timeout(2000)
     # 3. Website openen
     driver.get('https://webgate.ec.europa.eu/tracesnt/directory/publication/organic-operator/index#!?sort=-issuedOn')
 
