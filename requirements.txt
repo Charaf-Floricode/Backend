@@ -13,3 +13,8 @@ flask-sqlalchemy
 selenium
 bs4
 chromedriver-autoinstaller
+msal
+requests
+io
+zipfile
+re
