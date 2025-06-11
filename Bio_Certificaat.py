@@ -28,13 +28,13 @@ def extract_data():
         service=Service(executable_path=driver_path),
         options=options,
     )
-    driver.set_page_load_timeout(90)
-    driver.set_script_timeout(90)
+    driver.set_page_load_timeout(300)
+    driver.set_script_timeout(300)
     # 3. Website openen
     driver.get('https://webgate.ec.europa.eu/tracesnt/directory/publication/organic-operator/index#!?sort=-issuedOn')
 
     try:
-        wait = WebDriverWait(driver, 20)
+        wait = WebDriverWait(driver, 60)
 
         # Stap 1: Klik op "Geavanceerd zoeken"
         geavanceerd_zoeken_knop = wait.until(
@@ -43,7 +43,7 @@ def extract_data():
         geavanceerd_zoeken_knop.click()
         print("✔️ Geavanceerd zoeken geopend.")
 
-        time.sleep(2)
+        time.sleep(30)
 
         # Stap 2: Open de dropdown 'Categorieën producten'
         categorie_dropdown = wait.until(
@@ -52,7 +52,7 @@ def extract_data():
         categorie_dropdown.click()
         print("✔️ Categorieën dropdown geopend.")
 
-        time.sleep(1)
+        time.sleep(30)
 
         # Stap 3: Vink de juiste categorie aan (a) Onverwerkte planten
         categorie_label = wait.until(
@@ -61,7 +61,7 @@ def extract_data():
         categorie_label.click()
         print("✔️ (a) Categorie 'Onverwerkte planten' succesvol aangevinkt via label.")
 
-        time.sleep(1)
+        time.sleep(30)
 
         # Stap 4: Klik op de 'Zoeken' knop
         zoek_button = wait.until(
@@ -74,7 +74,7 @@ def extract_data():
         print(f"⚠️ Fout opgetreden: {e}")
 
     # 5. Scroll naar beneden om alle resultaten te laden
-    SCROLL_PAUSE_TIME = 2
+    SCROLL_PAUSE_TIME = 10
     last_height = driver.execute_script("return document.body.scrollHeight")
 
     while True:
