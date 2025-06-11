@@ -15,5 +15,3 @@ bs4
 chromedriver-autoinstaller
 msal
 requests
-zipfile
-re
