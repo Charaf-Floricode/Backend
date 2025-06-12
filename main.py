@@ -13,7 +13,8 @@ from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse     # ← NEW
-
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 # Import core logic from service modules
 from BedrijfLocatiecodering.bedrijfscodering import bedrijfscodering as proc_bedrijf
 from BedrijfLocatiecodering.locatiecodering import locatiecodering as proc_locatie
@@ -199,8 +200,9 @@ def api_run_plantion():
     )
 @app.get("/omzet/data", tags=["Automations"])
 def get_omzet_data():
-    
-    return main()
+    data=main()
+          # NaN → None, types → JSON-safe
+    return data 
 # ─── Uvicorn LAUNCH (DEV ONLY) ─────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
