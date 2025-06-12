@@ -6,9 +6,49 @@ from io import BytesIO
 import pandas as pd
 from fnmatch import fnmatch
 from dotenv import load_dotenv
-
+import tempfile
+from decimal import Decimal
+import re
 load_dotenv()
+_sci_re = re.compile(r'^\s*\d+,\d+E[+\-]?\d+\s*$', re.IGNORECASE)
 
+def _restore_full(s: str) -> str:
+    """
+    If s matches the Excel‐style sci notation with comma,
+    convert to full integer string; else return unchanged.
+    """
+    if not isinstance(s, str):
+        return s
+    if _sci_re.match(s):
+        s_norm = s.strip().replace(",", ".")
+        try:
+            # Decimal keeps all significant digits
+            dec = Decimal(s_norm)
+            # quantize(1) means “no fractional part”
+            return str(dec.quantize(1))
+        except Exception:
+            return s
+    return s
+def load_from_raw_bytes(raw_bytes: bytes) -> pd.DataFrame:
+    # 1) Create a temporary directory
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = f"{tmpdir}/GLNPLE.csv"
+        
+        # 2) Write the raw bytes exactly as they came
+        with open(tmp_path, "wb") as f:
+            f.write(raw_bytes)
+        
+        # 3) Read back with pandas—force GLN_code_requester as string
+        df = pd.read_csv(
+            tmp_path,
+            sep=";",
+            dtype={"GLN_code_requester": str},
+            keep_default_na=False,
+            engine="python",
+        )
+        
+    # once the with‐block exits, the temp dir (and file) are gone
+    return df
 def fetch_mail_data() -> pd.DataFrame:
     """
     Connect to Microsoft Graph, pull emails from a specific folder,
@@ -29,7 +69,7 @@ def fetch_mail_data() -> pd.DataFrame:
     )
 
     # Criteria
-    SENDERS           = {"info@plantion.nl", "codebeheer@floricode.com", "m.snippe@floricode.com" }
+    SENDERS           = {"info@plantion.nl", "m.snippe@floricode.com"}
     KEYWORDS          = ["Mutatie GLN codes naar FloriCode"]
     ATT_NAME_PATTERNS = ["*.xlsx", "*.csv", "GLNPLE*"]
 
@@ -65,6 +105,7 @@ def fetch_mail_data() -> pd.DataFrame:
     resp = requests.get(url_msgs, headers=headers)
     resp.raise_for_status()
     messages = resp.json().get("value", [])
+    
 
     # 3) Filter in Python on sender and keywords in subject/bodyPreview
     def matches(msg):
@@ -73,10 +114,11 @@ def fetch_mail_data() -> pd.DataFrame:
             return False
         subj = msg["subject"].lower()
         body = (msg.get("bodyPreview") or "").lower()
+        
         return any(kw.lower() in subj or kw.lower() in body for kw in KEYWORDS)
 
     filtered = [m for m in messages if matches(m)]
-
+    
     # 4) Download & parse attachments into a master list of DataFrames
 # 4) Download & parse attachments into a master list of DataFrames
     pieces = []
@@ -98,52 +140,31 @@ def fetch_mail_data() -> pd.DataFrame:
         )
         r2 = requests.get(url_atts, headers=headers)
         r2.raise_for_status()
-
+        
         for att in r2.json().get("value", []):
             name = att["name"]
+
             if not fnmatch(name.lower(), "glnple*"):     # preciezere test
                 continue
 
             # ------------ attachment voldoet, nu verwerken ------------
+            #print(att["contentBytes"])
             raw = base64.b64decode(att["contentBytes"])
+            #df_raw = load_from_raw_bytes(raw)
+            #split_df = df_raw.applymap(_restore_full)
+            #print(split_df)
+            text = raw.decode("utf-8", errors="replace")
+            #print(text)
             ext = name.rsplit(".", 1)[-1].lower()
-            bio = BytesIO(raw)
+            
 
-            if ext in ("xlsx", "xls"):
-                sheets = pd.read_excel(bio, sheet_name=None, engine="openpyxl")
-                for sheet_name, df in sheets.items():
-                    dfc = df.dropna(how="all").dropna(how="all", axis=1)
-                    if dfc.empty:
-                        continue
-                    pieces.append(dfc)                   # geen metadata nodig?
-            elif ext == "csv":
-                df = pd.read_csv(bio, encoding="utf-8")
-                dfc = df.dropna(how="all").dropna(how="all", axis=1)
-                if not dfc.empty:
-                    pieces.append(dfc)
-
-            found_glnple = True                         # <-- zet vlag
-            break                                       # geen andere attachments uit dit mailtje meer nodig
-
-
-    # 5) Concatenate all pieces into one DataFrame
-    if pieces:
-        master_df = pd.concat(pieces, ignore_index=True)
-    else:
-        master_df = pd.DataFrame()
-
-    return master_df
+    return raw
 
 def main():
     df = fetch_mail_data()
-    df_clean = df.loc[:, ~df.columns.str.startswith("__")]
-    df_clean.to_csv(r"C:\Users\Floricode\Downloads\GLNPLE.csv", sep='\t', index=False)
-
-# or, explicitly
-# df_clean = df.drop(columns=["__msg_id", "__subject", "__att_name", "__sheet_name"])
-
-    #print(df_clean)
-    return df_clean
+    #df_clean = df.loc[:, ~df.columns.str.startswith("__")]
+    #df.to_csv(r"C:\Users\c.elkhattabi\Downloads\GLNPLE.csv", sep='\t', index=False)
+    return df
 
 if __name__ == "__main__":
     main()

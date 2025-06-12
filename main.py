@@ -199,7 +199,8 @@ def api_run_plantion():
     )
 @app.get("/omzet/data", tags=["Automations"])
 def get_omzet_data():
-    main()
+    
+    return main()
 # ─── Uvicorn LAUNCH (DEV ONLY) ─────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
