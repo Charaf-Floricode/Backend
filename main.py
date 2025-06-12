@@ -177,10 +177,10 @@ def download_coderingen():
     headers = {"Content-Disposition": 'attachment; filename="coderingen.zip"'}
     return StreamingResponse(mem_zip, media_type="application/zip", headers=headers)
 
-@app.post("/bedrijflocatie/plantion", tags=["Automations"])
-def api_run_plantion():
+@app.get("/bedrijflocatie/plantion/download", tags=["Automations"])
+def download_plantion():
     try:
-        df = clean_gln_to_xls()               # DataFrame
+        df, removed = clean_gln_to_xls()               # DataFrame
 
         # 1️⃣  schrijf DF naar geheugen-buffer
         buf = BytesIO()
@@ -190,7 +190,10 @@ def api_run_plantion():
     except Exception as exc:
         logging.exception("Plantion export mislukte")
         raise HTTPException(500, f"Fout: {exc}")
-
+    payload = {
+        "removed": list(map(str, removed)),   # zorg dat alles str is
+        "count_removed": len(removed),
+    }
     # 2️⃣  stuur exact die buffer terug
     headers = {"Content-Disposition": 'attachment; filename="Plantion.xls"'}
     return StreamingResponse(
@@ -198,6 +201,20 @@ def api_run_plantion():
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers=headers,
     )
+@app.post("/bedrijflocatie/plantion", tags=["Automations"])
+def run_plantion():
+    try:
+        df, removed = clean_gln_to_xls()               # DataFram
+    except Exception as exc:
+        logging.exception("Plantion export mislukte")
+        raise HTTPException(500, f"Fout: {exc}")
+    payload = {
+        "removed": list(map(str, removed)),   # zorg dat alles str is
+        "count_removed": len(removed),
+    }
+    return JSONResponse(jsonable_encoder(payload))
+
+
 @app.get("/omzet/data", tags=["Automations"])
 def get_omzet_data():
     data=main()

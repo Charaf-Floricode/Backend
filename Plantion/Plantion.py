@@ -103,7 +103,7 @@ def clean_gln_to_xls():
         raise ValueError("'.xls' format can hold max 65 535 rows; file is larger.")
 
     print("⚠️  Rows removed due to expiry_date:", ", ".join(removed))
-    return df_clean
+    return df_clean, removed
 
 
 # ─── quick demo ───
