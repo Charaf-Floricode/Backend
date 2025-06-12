@@ -18,6 +18,8 @@ from fastapi.responses import StreamingResponse     # ← NEW
 from BedrijfLocatiecodering.bedrijfscodering import bedrijfscodering as proc_bedrijf
 from BedrijfLocatiecodering.locatiecodering import locatiecodering as proc_locatie
 from BedrijfLocatiecodering.sharepoint import fetch_bedrijf_df, fetch_locatie_df
+from Plantion.Plantion import clean_gln_to_xls 
+
 from GPC import export_code_lists, load_to_postgres
 from Bio_Certificaat import main as certificate
 from APIData import strategy_direct_json
@@ -158,9 +160,9 @@ def download_coderingen():
                 buf.seek(0)
                 zf.writestr(name, buf.read())
 
-            add_df_to_zip(bedrijf_df,  "bedrijfscodering.xlsx")
-            add_df_to_zip(locatie1_df, "locatiecodering_1.xlsx")
-            add_df_to_zip(locatie2_df, "locatiecodering_2.xlsx")
+            add_df_to_zip(bedrijf_df,  "bedrijfscodering.xls")
+            add_df_to_zip(locatie1_df, "locatiecodering_in.xls")
+            add_df_to_zip(locatie2_df, "locatiecodering_uit.xls")
 
         mem_zip.seek(0)
 
@@ -173,6 +175,27 @@ def download_coderingen():
     headers = {"Content-Disposition": 'attachment; filename="coderingen.zip"'}
     return StreamingResponse(mem_zip, media_type="application/zip", headers=headers)
 
+@app.post("/bedrijflocatie/plantion", tags=["Automations"])
+def api_run_plantion():
+    try:
+        df = clean_gln_to_xls()               # DataFrame
+
+        # 1️⃣  schrijf DF naar geheugen-buffer
+        buf = BytesIO()
+        df.to_excel(buf, index=False, engine="openpyxl")  # of "xlwt" voor .xls
+        buf.seek(0)                         # reset pointer
+
+    except Exception as exc:
+        logging.exception("Plantion export mislukte")
+        raise HTTPException(500, f"Fout: {exc}")
+
+    # 2️⃣  stuur exact die buffer terug
+    headers = {"Content-Disposition": 'attachment; filename="Plantion.xls"'}
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers=headers,
+    )
 
 # ─── Uvicorn LAUNCH (DEV ONLY) ─────────────────────────────────────────────
 if __name__ == "__main__":
