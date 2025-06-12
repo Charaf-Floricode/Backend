@@ -23,6 +23,7 @@ from Plantion.Plantion import clean_gln_to_xls
 from GPC import export_code_lists, load_to_postgres
 from Bio_Certificaat import main as certificate
 from APIData import strategy_direct_json
+from Financieel.omzet import main
 
 # ─── FASTAPI SETUP ─────────────────────────────────────────────────────────
 app = FastAPI(
@@ -196,7 +197,9 @@ def api_run_plantion():
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers=headers,
     )
-
+@app.get("/omzet/data", tags=["Automations"])
+def get_omzet_data():
+    main()
 # ─── Uvicorn LAUNCH (DEV ONLY) ─────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
