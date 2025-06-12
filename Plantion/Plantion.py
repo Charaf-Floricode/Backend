@@ -2,7 +2,7 @@
 # --------------------------------------------------------------
 from pathlib import Path
 import re, pandas as pd
-from Outlook import fetch_mail_data
+from Plantion.Outlook import fetch_mail_data
 from datetime import datetime
 from io import StringIO
 
