@@ -11,7 +11,7 @@ from Financieel.file import main as megafile
 def main():
     
 
-    df = pd.read_excel(megafile())
+    df = megafile()
 
     # 1️⃣ Aantal abonnementen per land
     land_counts = (
