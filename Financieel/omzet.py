@@ -6,14 +6,12 @@ import numpy as np
 import pandas as pd
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
-
-SOURCE = Path(r"C:\Users\c.elkhattabi\Downloads\Omzetoverzicht contracten 2025 incl verlengingen.xlsx")
+from file import main as megafile
 
 def main():
-    if not SOURCE.exists():
-        raise HTTPException(404, "Bron-Excel niet gevonden")
+    
 
-    df = pd.read_excel(SOURCE)
+    df = pd.read_excel(megafile())
 
     # 1️⃣ Aantal abonnementen per land
     land_counts = (

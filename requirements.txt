@@ -18,3 +18,5 @@ requests
 outlook
 XlsxWriter
 xlwt
+mega.py          
+pycryptodome      
