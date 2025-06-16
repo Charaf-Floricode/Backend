@@ -9,12 +9,8 @@ mega = Mega()
 
 def main():
     mega = Mega()
-    try: 
-        # Attempt to log in 
-        m = mega.login(os.getenv("MEGA_EMAIL"),
-        os.getenv("MEGA_PASS")) 
-    except Exception as e: 
-        print(f'Login failed: {e}')
+    m = mega.login(os.getenv("MEGA_EMAIL"),
+    os.getenv("MEGA_PASS"))
     path_in_cloud="Floricode/Omzetoverzicht contracten 2025 incl verlengingen.xlsx"
     file = m.find(path_in_cloud)
     if file is None:
