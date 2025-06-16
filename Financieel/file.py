@@ -8,6 +8,7 @@ load_dotenv()
 mega = Mega()
 
 def main():
+    mega = Mega()
     try: 
         # Attempt to log in 
         m = mega.login(os.getenv("MEGA_EMAIL"),

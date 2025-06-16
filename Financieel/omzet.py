@@ -7,7 +7,8 @@ import pandas as pd
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from Financieel.file import main as megafile
-
+from dotenv import load_dotenv
+load_dotenv()
 def main():
     
 
