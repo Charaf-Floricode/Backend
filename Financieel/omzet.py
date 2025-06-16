@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
-from file import main as megafile
+from Financieel.file import main as megafile
 
 def main():
     
