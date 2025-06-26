@@ -25,3 +25,4 @@ python-multipart
 psycopg2-binary
 sqlmodel
 passlib
+argon2_cffi
