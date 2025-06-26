@@ -9,22 +9,31 @@ import zipfile
 import pathlib
 import tempfile
 import os
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse     # ← NEW
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlmodel import select
+from jose import jwt
 # Import core logic from service modules
 from BedrijfLocatiecodering.bedrijfscodering import bedrijfscodering as proc_bedrijf
 from BedrijfLocatiecodering.locatiecodering import locatiecodering as proc_locatie
 from BedrijfLocatiecodering.sharepoint import fetch_bedrijf_df, fetch_locatie_df
 from Plantion.Plantion import clean_gln_to_xls 
-
+from EDIBULB.EdiBulb import main as edi
 from GPC import export_code_lists, load_to_postgres
 from Bio_Certificaat import main as certificate
 from APIData import strategy_direct_json
 from Financieel.omzet import main
+
+import Login.login as auth
+from Inlog.database import init_db, get_session
+from Inlog.models import User
+from Inlog.security import verify_password, create_access_token
+from Inlog.auth import get_current_user, role_required
 
 # ─── FASTAPI SETUP ─────────────────────────────────────────────────────────
 app = FastAPI(
@@ -50,7 +59,26 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger()
+SECRET = "SUPERSECRET"
+from pydantic import BaseModel
 
+class Credentials(BaseModel):
+    username: str
+    password: str
+
+@app.post("/auth/login", summary="Obtain JWT access token")
+def login(creds: Credentials, db=Depends(get_session)):
+    """Validate credentials and issue a signed JWT that contains a role claim."""
+
+    user: User | None = db.exec(
+        select(User).where(User.username == creds.username)
+    ).first()
+
+    if not user or not verify_password(creds.password, user.hashed_password):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid credentials")
+
+    token = create_access_token(user)
+    return {"access_token": token, "token_type": "bearer"}
 # ─── ROOT & HEALTH ─────────────────────────────────────────────────────────
 @app.get("/", include_in_schema=False)
 def root():
@@ -214,9 +242,34 @@ def run_plantion():
     }
     return JSONResponse(jsonable_encoder(payload))
 
+@app.post("/bedrijflocatie/edibulb", tags=["Automations"])
+def download_edibulb():
+            # 1) run jouw bestaande logica
+    df = edi()   
+    if df is None :
+        raise HTTPException(404, "Geen data gevonden voor bedrijf of locatie")
+
+    try:
+        buf = BytesIO()
+        df.to_excel(buf, index=False, engine="openpyxl")  # of "xlwt" voor .xls
+        buf.seek(0)    
+
+    except Exception as exc:
+        logging.exception("Coderingen genereren mislukte")
+        raise HTTPException(500, f"Fout: {exc}")
+
+    # 4️⃣  Zip streamen naar de browser
+    headers = {"Content-Disposition": 'attachment; filename="edibulb_import.xlsx"'}
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers=headers,
+    )
 
 @app.get("/omzet/data", tags=["Automations"])
-def get_omzet_data():
+def get_omzet_data(
+    current_user: User = Depends(role_required("admin", "financieel"))
+):
     data=main()
           # NaN → None, types → JSON-safe
     return data 

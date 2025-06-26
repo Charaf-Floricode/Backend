@@ -6,11 +6,10 @@ import tempfile
 from dotenv import load_dotenv
 load_dotenv()
 mega = Mega()
-
+m = mega.login(os.getenv("MEGA_EMAIL"),
+os.getenv("MEGA_PASS"))
 def main():
-    mega = Mega()
-    m = mega.login(os.getenv("MEGA_EMAIL"),
-    os.getenv("MEGA_PASS"))
+
     path_in_cloud="Floricode/Omzetoverzicht contracten 2025 incl verlengingen.xlsx"
     file = m.find(path_in_cloud)
     if file is None:

@@ -1,17 +1,20 @@
 # routes/omzet.py ────────────────────────────────────────────
 from pathlib import Path
 from datetime import datetime
-
+import os
 import numpy as np
 import pandas as pd
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from Financieel.file import main as megafile
+from mega.mega import Mega
 from dotenv import load_dotenv
 load_dotenv()
+mega = Mega()
+m = mega.login(os.getenv("MEGA_EMAIL"),
+os.getenv("MEGA_PASS"))
 def main():
     
-
     df = megafile()
 
     # 1️⃣ Aantal abonnementen per land
@@ -78,3 +81,4 @@ def main():
         "nieuw_per_maand": per_month,
         "totaal_per_relatietype": totaal_rel,
     })
+main()

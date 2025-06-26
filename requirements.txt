@@ -20,3 +20,6 @@ XlsxWriter
 xlwt
 mega.py          
 pycryptodome      
+python-jose
+python-multipart
+psycopg2-binary
