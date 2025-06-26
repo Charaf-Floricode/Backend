@@ -24,3 +24,4 @@ python-jose
 python-multipart
 psycopg2-binary
 sqlmodel
+passlib
