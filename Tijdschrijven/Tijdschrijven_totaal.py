@@ -13,12 +13,12 @@ lees_tijdschrijven_rapport.py
 import math
 import datetime as dt
 from pathlib import Path
-from Tijdschrijven.file import main as file
+from Tijdschrijven.file import main
 import pandas as pd
 from openpyxl import load_workbook
 
 # ---------------------------------------------------------------- SETTINGS
-FILE_PATH  = file
+
 SHEET_NAME = "Rapport"
 # -------------------------------------------------------------------------
 
@@ -42,29 +42,11 @@ def to_hours(x) -> float:
     return math.nan
 
 
-def load_hours(path: Path = FILE_PATH, sheet: str = SHEET_NAME) -> pd.DataFrame:
-    wb = load_workbook(path, read_only=True, data_only=True)
-    ws = wb[sheet] if sheet in wb.sheetnames else wb.active
-
-    # ── 1. zoek de LAATSTE rij waar kolom A 'Taak' is ────────────────────
-    header_row, header = None, None
-    for ridx, row in enumerate(ws.iter_rows(values_only=True), start=1):
-        if row and row[0] == "Taak":
-            header_row, header = ridx, list(row)  # overschrijft telkens
-    if header_row is None:
-        raise ValueError("'Taak' niet gevonden in werkblad")
-
-    # ── 2. lees alle rijen onder de header tot eerste volledig lege rij ──
-    records = []
-    for r in ws.iter_rows(min_row=header_row + 1, values_only=True):
-        if not any(r):
-            break
-        records.append(r)
-
+def load_hours() -> pd.DataFrame:
+    file=main()
     # ── 3. DataFrame + ffill op samengevoegde kolommen ───────────────────
-    df = pd.DataFrame(records, columns=header)
-    cols_ffill = ["Taak", "Klant", "Project", "Afdeling"]
-    df[cols_ffill] = df[cols_ffill].ffill()
+    newfile=pd.DataFrame(file)
+    df = newfile
 
     # ── 4. uren toevoegen ────────────────────────────────────────────────
     df["Uren"] = df["Duur"].apply(to_hours)

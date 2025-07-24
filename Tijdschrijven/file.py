@@ -16,7 +16,13 @@ def main():
 
     # 1️⃣  download to memory (no disk needed)
     data = m.download(file, dest_path=None)  # returns bytes
-
+    
     # 2️⃣  read into pandas
-    df = pd.read_excel(data)
+    df = pd.read_excel(data,skiprows=8)
+    for col in df.columns:
+        if 'Unnamed' in col:
+            df.rename(columns={col: df.loc[0, col]}, inplace=True)
+    df = df.drop(0, axis=0).reset_index(drop=True)
+    print(df)
     return df
+main()
