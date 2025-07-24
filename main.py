@@ -30,7 +30,7 @@ from GPC import export_code_lists, load_to_postgres
 from Bio_Certificaat import main as certificate
 from APIData import strategy_direct_json
 from Financieel.omzet import main
-from Tijdschrijven.Tijdschrijven import load_hours
+
 from Tijdschrijven.Tijdschrijven_totaal import main_tijd
 
 import Login.login as auth
