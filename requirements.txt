@@ -26,3 +26,4 @@ psycopg2-binary
 sqlmodel
 passlib
 argon2_cffi
+matplotlib
