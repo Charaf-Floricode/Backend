@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import sys
 import logging
+from typing import Dict
+from typing import List, TypedDict
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -9,7 +11,7 @@ import zipfile
 import pathlib
 import tempfile
 import os
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse     # ← NEW
@@ -28,6 +30,8 @@ from GPC import export_code_lists, load_to_postgres
 from Bio_Certificaat import main as certificate
 from APIData import strategy_direct_json
 from Financieel.omzet import main
+from Tijdschrijven.Tijdschrijven import load_hours
+from Tijdschrijven.Tijdschrijven_totaal import main_tijd
 
 import Login.login as auth
 from Inlog.database import init_db, get_session
@@ -273,6 +277,52 @@ def get_omzet_data(
     data=main()
           # NaN → None, types → JSON-safe
     return data 
+
+class InternResponse(BaseModel):
+    color: str                 # groen | oranje | rood
+    per_task: Dict[str, float]  
+    sick_hours: float              # totaal ziekte-uren
+    sick_pct:   float              # percentage ziekteverzuim (0-100)
+
+@app.get("/intern/status", response_model=InternResponse)
+def intern_status(
+    _: User = Depends(role_required("admin", "viewer", "ops")),
+    taak: List[str] = Query([], description="filter op taak"),
+    min_uren: float = Query(0.0, ge=0, description="minimaal totaal uren"),
+    max_uren: float = Query(float("inf"), ge=0, description="maximaal totaal uren"),
+    sort: str = Query("desc", regex="^(asc|desc)$", description="sort asc | desc"),
+):
+    # 1. totaal­uren per taak uit helper
+    df = main_tijd()                               # kolommen: Taak | Uren
+
+    # 2. filters
+    if taak:
+        df = df[df["Taak"].isin(taak)]
+    df = df[(df["Uren"] >= min_uren) & (df["Uren"] <= max_uren)]
+
+    # 3. sorteren
+    df = df.sort_values("Uren", ascending=(sort == "asc"))
+    total_hours = df["Uren"].sum()
+    sick_hours  = df.loc[
+        df["Taak"].str.contains("Ziek", na=False), "Uren"
+    ].sum()
+    sick_pct = round(sick_hours / total_hours * 100, 2)
+    
+    # 4. dict bouwen
+    per_task = df.set_index("Taak")["Uren"].round(2).to_dict()
+
+    # 5. kleurcode voor ‘Beheer’
+    beheer = per_task.get("Beheer", 0)
+    color  = "groen" if beheer < 50 else "oranje" if beheer < 100 else "rood"
+
+    return {
+        "color":      color,
+        "per_task":   per_task,
+        "sick_hours": round(sick_hours, 2),
+        "sick_pct":   sick_pct,
+    }
+
+    
 # ─── Uvicorn LAUNCH (DEV ONLY) ─────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn

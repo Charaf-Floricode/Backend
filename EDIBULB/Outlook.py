@@ -117,6 +117,6 @@ def edibulb():
             })
             print(f"· attachment '{name}' uit '{m['subject']}' geladen → {df.shape}")
             print(df)
-    return df
+    return [r["df"] for r in results]
 
 

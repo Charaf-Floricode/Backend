@@ -86,7 +86,15 @@ def process_gln_dataframe(df: pd.DataFrame):
     df.loc[df["GLN_code_requester"].str.strip().ne(""), "Sector_code"] = 1
     df["country_prod_code"] = df["country_name_code"]
 
+    if df["postal_identification_code"].fillna("").eq("").all():
+        df["postal_identification_code"] = 0
+    if df["street_number"].fillna("").eq("").all():
+        df["street_number"] = 0
 
+    df['chamber_registration_number'] = df['chamber_registration_number'].fillna('').astype(str)
+    lens = df['chamber_registration_number'].str.len()
+    mask = (lens < 8) & (lens > 1)
+    df.loc[mask, 'chamber_registration_number'] = '0' + df.loc[mask, 'chamber_registration_number'] 
 
     filled = df["expiry_date"].fillna("").str.strip().str.lower().ne("")
     removed = df.loc[filled, "Plantion_registration_nr"].tolist()

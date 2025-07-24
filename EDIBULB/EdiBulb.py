@@ -34,7 +34,16 @@ def verwerk_meerdere_mutatiebestanden(*dataframes, uitvoerpad=None):
 
     # Verwijder lege rijen (zonder Bedrijfsnaam)
     resultaat = resultaat[resultaat['Bedrijfsnaam'].apply(niet_leeg)]
+    if resultaat["Postcode"].fillna("").eq("").all():
+        resultaat["Postcode"] = 0
+    if resultaat["Straat"].fillna("").eq("").all():
+        resultaat["Straat"] = 0
 
+    resultaat['KvK'] = resultaat['KvK'].fillna('').astype(str)
+    lens = resultaat['KvK'].str.len()
+    mask = (lens < 8) & (lens > 1)
+    #mask = resultaat['KvK'].str.len() < 8 and resultaat['KvK'].str.len() > 1
+    resultaat.loc[mask, 'KvK'] = '0' + resultaat.loc[mask, 'KvK']
     # Export naar .xls
     wb = Workbook()
     ws = wb.add_sheet("Mutaties")
@@ -55,8 +64,8 @@ def verwerk_meerdere_mutatiebestanden(*dataframes, uitvoerpad=None):
 
 
 def main():
-    df = edibulb()
-    resultaat = verwerk_meerdere_mutatiebestanden(df)
+    dataframes = edibulb()  # Dit is een lijst van dataframes
+    resultaat = verwerk_meerdere_mutatiebestanden(*dataframes)  # Let op de ster * hier
 
     print(resultaat)
     return resultaat
