@@ -13,12 +13,12 @@ lees_tijdschrijven_rapport.py
 import math
 import datetime as dt
 from pathlib import Path
-
+from Tijdschrijven.file import main as file
 import pandas as pd
 from openpyxl import load_workbook
 
 # ---------------------------------------------------------------- SETTINGS
-FILE_PATH  = Path(r"C:\Users\c.elkhattabi\Downloads\Rapport 2025-07-23 13-22-44 (1).xlsx")
+FILE_PATH  = file
 SHEET_NAME = "Rapport"
 # -------------------------------------------------------------------------
 
