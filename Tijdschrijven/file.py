@@ -9,7 +9,7 @@ m = mega.login(os.getenv("MEGA_EMAIL"),
 os.getenv("MEGA_PASS"))
 def main():
 
-    path_in_cloud="Floricode/Rapport 2025-07-23 13-22-44 (1).xlsx"
+    path_in_cloud="Floricode/Rapport 2025-07-31 11-02-11.xlsx"
     file = m.find(path_in_cloud)
     if file is None:
         raise FileNotFoundError("Bestand niet gevonden in Mega")
@@ -25,4 +25,4 @@ def main():
     df = df.drop(0, axis=0).reset_index(drop=True)
     print(df)
     return df
-main()
+

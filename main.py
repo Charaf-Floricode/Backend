@@ -20,6 +20,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import select
 from jose import jwt
+from typing import Dict, List, Optional
 # Import core logic from service modules
 from BedrijfLocatiecodering.bedrijfscodering import bedrijfscodering as proc_bedrijf
 from BedrijfLocatiecodering.locatiecodering import locatiecodering as proc_locatie
@@ -31,7 +32,7 @@ from Bio_Certificaat import main as certificate
 from APIData import strategy_direct_json
 from Financieel.omzet import main
 
-from Tijdschrijven.Tijdschrijven_totaal import main_tijd
+from Tijdschrijven.Tijdschrijven_totaal import build_intern_status
 
 import Login.login as auth
 from Inlog.database import init_db, get_session
@@ -64,7 +65,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger()
 SECRET = "SUPERSECRET"
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class Credentials(BaseModel):
     username: str
@@ -278,50 +279,9 @@ def get_omzet_data(
           # NaN → None, types → JSON-safe
     return data 
 
-class InternResponse(BaseModel):
-    color: str                 # groen | oranje | rood
-    per_task: Dict[str, float]  
-    sick_hours: float              # totaal ziekte-uren
-    sick_pct:   float              # percentage ziekteverzuim (0-100)
-
-@app.get("/intern/status", response_model=InternResponse)
-def intern_status(
-    _: User = Depends(role_required("admin", "viewer", "ops")),
-    taak: List[str] = Query([], description="filter op taak"),
-    min_uren: float = Query(0.0, ge=0, description="minimaal totaal uren"),
-    max_uren: float = Query(float("inf"), ge=0, description="maximaal totaal uren"),
-    sort: str = Query("desc", regex="^(asc|desc)$", description="sort asc | desc"),
-):
-    # 1. totaal­uren per taak uit helper
-    df = main_tijd()                               # kolommen: Taak | Uren
-
-    # 2. filters
-    if taak:
-        df = df[df["Taak"].isin(taak)]
-    df = df[(df["Uren"] >= min_uren) & (df["Uren"] <= max_uren)]
-
-    # 3. sorteren
-    df = df.sort_values("Uren", ascending=(sort == "asc"))
-    total_hours = df["Uren"].sum()
-    sick_hours  = df.loc[
-        df["Taak"].str.contains("Ziek", na=False), "Uren"
-    ].sum()
-    sick_pct = round(sick_hours / total_hours * 100, 2)
-    
-    # 4. dict bouwen
-    per_task = df.set_index("Taak")["Uren"].round(2).to_dict()
-
-    # 5. kleurcode voor ‘Beheer’
-    beheer = per_task.get("Beheer", 0)
-    color  = "groen" if beheer < 50 else "oranje" if beheer < 100 else "rood"
-
-    return {
-        "color":      color,
-        "per_task":   per_task,
-        "sick_hours": round(sick_hours, 2),
-        "sick_pct":   sick_pct,
-    }
-
+@app.get("/intern/status", summary="Intern aggregaties", tags=["Intern"])
+def intern_status(_: User = Depends(role_required("admin", "viewer", "ops"))):
+    return build_intern_status()
     
 # ─── Uvicorn LAUNCH (DEV ONLY) ─────────────────────────────────────────────
 if __name__ == "__main__":
