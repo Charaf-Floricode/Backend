@@ -7,7 +7,7 @@ from datetime import datetime
 from io import StringIO
 
 date = datetime.now().strftime("%Y-%m-%d")
-file=fetch_mail_data()
+
 def explode_two_header_rows(raw: bytes, encoding="utf-8") -> pd.DataFrame:
     """
     raw: the exact bytes you pasted (with \r\n separators)
@@ -102,7 +102,7 @@ def process_gln_dataframe(df: pd.DataFrame):
 
 # ── 3. one-liner: csv → cleaned df → .xls ─────────────────────
 def clean_gln_to_xls():
-    
+    file=fetch_mail_data()
     df_clean, removed = process_gln_dataframe(file)
     print(df_clean)
     df_clean.to_csv(r"C:\Users\c.elkhattabi\Downloads\df.csv", sep=";", index=False)
