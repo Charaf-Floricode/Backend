@@ -6,6 +6,7 @@ from typing import List, TypedDict
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
+import json
 import pandas as pd
 import zipfile
 import pathlib
@@ -172,7 +173,7 @@ def api_run_biocertificate():
         headers={f"Content-Disposition": f'attachment; filename="{filename}"'}
     )
             
-@app.post("/bedrijflocatie/rfh", tags=["Automations"])
+@app.post("/bedrijflocatie/rfh/download", tags=["Automations"])
 def download_coderingen():
             # 1) run jouw bestaande logica
     df_loc = fetch_locatie_df()   
@@ -182,8 +183,8 @@ def download_coderingen():
 
     try:
         # 2️⃣  Data verwerken → DataFrames
-        bedrijf_df             = proc_bedrijf(df_bedrijf)   # DataFrame
-        locatie1_df, locatie2_df = proc_locatie(df_loc)     # twee DataFrames
+        bedrijf_df,errors_bedrijf           = proc_bedrijf(df_bedrijf)   # DataFrame
+        locatie1_df, locatie2_df,errors_loc = proc_locatie(df_loc)     # twee DataFrames
 
         # 3️⃣  Zip opbouwen in geheugen
         mem_zip = BytesIO()
@@ -201,19 +202,42 @@ def download_coderingen():
 
         mem_zip.seek(0)
 
-
     except Exception as exc:
         logging.exception("Coderingen genereren mislukte")
         raise HTTPException(500, f"Fout: {exc}")
-
-    # 4️⃣  Zip streamen naar de browser
-    headers = {"Content-Disposition": 'attachment; filename="coderingen.zip"'}
+    headers = {
+        "Content-Disposition": 'attachment; filename="coderingen.zip"'
+    }
+    
     return StreamingResponse(mem_zip, media_type="application/zip", headers=headers)
+@app.post("/bedrijflocatie/rfh/errors", tags=["Automations"])
+def rfh_errors():
+            # 1) run jouw bestaande logica
+    df_loc = fetch_locatie_df()   
+    df_bedrijf = fetch_bedrijf_df()
+    if df_bedrijf is None or df_loc is None:
+        raise HTTPException(404, "Geen data gevonden voor bedrijf of locatie")
 
+    
+    # 2️⃣  Data verwerken → DataFrames
+    bedrijf_df,errors_bedrijf           = proc_bedrijf(df_bedrijf)   # DataFrame
+    locatie1_df, locatie2_df,errors_loc = proc_locatie(df_loc) 
+
+    preview_loc = [str(e) for e in errors_loc[:10]]
+    preview_bed = [str(e) for e in errors_bedrijf][:10]
+    total = len(errors_loc) + len(errors_bedrijf)
+    payload = {
+        "errors_bedrijf": errors_bedrijf,
+        "errors_locatie": errors_loc,
+        "count_bedrijf": len(errors_bedrijf),
+        "count_locatie": len(errors_loc),
+        "total": len(errors_bedrijf) + len(errors_loc),
+    }
+    return JSONResponse(payload)
 @app.get("/bedrijflocatie/plantion/download", tags=["Automations"])
 def download_plantion():
     try:
-        df, removed = clean_gln_to_xls()               # DataFrame
+        df, removed, errors = clean_gln_to_xls()               # DataFrame
 
         # 1️⃣  schrijf DF naar geheugen-buffer
         buf = BytesIO()
@@ -223,10 +247,7 @@ def download_plantion():
     except Exception as exc:
         logging.exception("Plantion export mislukte")
         raise HTTPException(500, f"Fout: {exc}")
-    payload = {
-        "removed": list(map(str, removed)),   # zorg dat alles str is
-        "count_removed": len(removed),
-    }
+
     # 2️⃣  stuur exact die buffer terug
     headers = {"Content-Disposition": 'attachment; filename="Plantion.xls"'}
     return StreamingResponse(
@@ -237,13 +258,14 @@ def download_plantion():
 @app.post("/bedrijflocatie/plantion", tags=["Automations"])
 def run_plantion():
     try:
-        df, removed = clean_gln_to_xls()               # DataFram
+        df, removed, errors = clean_gln_to_xls()               # DataFram
     except Exception as exc:
         logging.exception("Plantion export mislukte")
         raise HTTPException(500, f"Fout: {exc}")
     payload = {
         "removed": list(map(str, removed)),   # zorg dat alles str is
         "count_removed": len(removed),
+        "errors": list(map(str,errors))
     }
     return JSONResponse(jsonable_encoder(payload))
 

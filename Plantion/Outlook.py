@@ -69,7 +69,7 @@ def fetch_mail_data() -> pd.DataFrame:
     )
 
     # Criteria
-    SENDERS           = {"info@plantion.nl", "m.snippe@floricode.com"}
+    SENDERS           = {"info@plantion.nl", "m.snippe@floricode.com", "c.elkhattabi@floricode.com"}
     KEYWORDS          = ["Mutatie GLN codes naar FloriCode"]
     ATT_NAME_PATTERNS = ["*.xlsx", "*.csv", "GLNPLE*"]
 

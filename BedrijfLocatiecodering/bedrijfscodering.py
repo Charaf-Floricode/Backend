@@ -1,9 +1,55 @@
 import pandas as pd
 import os
 from datetime import datetime
-
+import re
 # === Huidige datum voor bestandsnamen ===
 today_str = datetime.today().strftime('%Y%m%d')
+def validate_lengths_and_types(df: pd.DataFrame):
+    """Raise if any column breaks its (TypeCode, MaxLen) rule."""
+    rules = {
+        'Sector_code':                          ('N', 1),
+        'GLN_code_requester':                   ('N',13),
+        'chamber_registration_number':          ('N', 8),
+        'coc_branch_number':                    ('N',12),
+        'phytosanitary_registration_number':    ('N',10),
+        'company_role_code':                    ('A', 1),
+        'company_location_level_code':          ('N', 1),
+        'company_name':                         ('AN',70),
+        'alternative_company_name':             ('AN',70),
+        'street_name':                          ('AN',35),
+        'street_number':                        ('AN', 9),
+        'street_number_suffix':                 ('AN', 6),
+        'postal_identification_code':           ('AN', 9),
+        'city_name':                            ('AN',35),
+        'country_name_code':                    ('AN', 3),
+        'country_prod_code':                    ('AN', 3),
+        'GLN_company_address_code_organisation':('N',13),
+        'entry_date':                           ('N', 8),
+        'expiry_date':                          ('N', 8),
+        'change_date_time':                     ('N',12),
+        'request_date_time':                    ('N',12),
+    }
+    tests = {
+        'N':  lambda v: bool(re.fullmatch(r'\d*', v)),
+        'A':  lambda v: bool(re.fullmatch(r'[A-Za-z]*', v)),
+        'AN': lambda v: bool(re.fullmatch(r'[A-Za-z0-9]*', v)),
+    }
+    errors = []
+    for col, (ctype, maxlen) in rules.items():
+        if col not in df.columns:
+            continue
+        series = (
+            df[col]
+              .fillna('')
+              .astype(str)
+             .str.replace(r'\.0$', '', regex=True)
+       )
+        for idx, val in series.items():
+            if len(val) > maxlen:
+                errors.append(f"{col}[row {idx}]: length {len(val)} > {maxlen}")
+            if ctype in ('N','A') and not tests[ctype](val):
+                errors.append(f"{col}[row {idx}]: invalid ({ctype}): '{val}'")
+    return errors
 
 
 # Bedrijfscodering en locatiecodering script automatisering met dataframe als input:
@@ -55,4 +101,5 @@ def bedrijfscodering(df):
         print(f"Dubbele FH_registration_nr gevonden:\n{fh_dupes[['FH_registration_nr']].to_string(index=False)}")
     if not (semicolon_cells or missing_fields or kvk_issues or not fh_dupes.empty):
         print("Geen fouten gevonden!")
-    return df
+    errors=validate_lengths_and_types(df)
+    return df, errors
