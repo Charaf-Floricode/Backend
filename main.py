@@ -3,7 +3,7 @@ import sys
 import logging
 from typing import Dict
 from typing import List, TypedDict
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 import json
@@ -40,7 +40,7 @@ from Inlog.database import init_db, get_session
 from Inlog.models import User
 from Inlog.security import verify_password, create_access_token
 from Inlog.auth import get_current_user, role_required
-
+time=datetime.datetime.now(timezone.utc).strftime('%Y-%m-%d')
 # ─── FASTAPI SETUP ─────────────────────────────────────────────────────────
 app = FastAPI(
     title="Floricode",
@@ -196,9 +196,9 @@ def download_coderingen():
                 buf.seek(0)
                 zf.writestr(name, buf.read())
 
-            add_df_to_zip(bedrijf_df,  "bedrijfscodering.xls")
-            add_df_to_zip(locatie1_df, "locatiecodering_in.xls")
-            add_df_to_zip(locatie2_df, "locatiecodering_uit.xls")
+            add_df_to_zip(bedrijf_df,  f"bedrijfscodering_{time}.xls")
+            add_df_to_zip(locatie1_df, f"locatiecodering_{time}_in.xls")
+            add_df_to_zip(locatie2_df, f"flocatiecodering_{time}_uit.xls")
 
         mem_zip.seek(0)
 
