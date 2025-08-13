@@ -30,7 +30,7 @@ EDIBULB=(
 )
 # Criteria
 SENDERS           = {"info@plantion.nl"}
-SENDERS_EDIBULB           = {"IVBadmin@hobaho.nl","administratie@cnb.nl"}
+SENDERS_EDIBULB           = {"IVBadmin@hobaho.nl","administratie@cnb.nl", "mborst@hobaho.nl"}
 KEYWORDS          = ["Mutatie GLN codes naar FloriCode"]
 
 ATT_NAME_PATTERNS = ["*.xlsx", "*.csv", "GLNPLE*"]
@@ -90,6 +90,7 @@ def edibulb():
     for m in messages:
         if not m["hasAttachments"]:
             continue
+        print(m)
 
         # download ALLE bijlagen van dit bericht
         atts = requests.get(
@@ -115,8 +116,9 @@ def edibulb():
                 "msg":       m,
                 "att_name":  name,
             })
+            
             print(f"· attachment '{name}' uit '{m['subject']}' geladen → {df.shape}")
-            print(df)
+    
     return [r["df"] for r in results]
 
 
