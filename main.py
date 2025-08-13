@@ -40,7 +40,7 @@ from Inlog.database import init_db, get_session
 from Inlog.models import User
 from Inlog.security import verify_password, create_access_token
 from Inlog.auth import get_current_user, role_required
-time=datetime.datetime.now(timezone.utc).strftime('%Y-%m-%d')
+time=datetime.now(timezone.utc).strftime('%Y-%m-%d')
 # ─── FASTAPI SETUP ─────────────────────────────────────────────────────────
 app = FastAPI(
     title="Floricode",
