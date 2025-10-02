@@ -34,7 +34,7 @@ from APIData import strategy_direct_json
 from Financieel.omzet import main
 
 from Tijdschrijven.Tijdschrijven_totaal import build_intern_status
-
+from azure_ad import require_user as get_current_user, role_required
 import Login.login as auth
 from Inlog.database import init_db, get_session
 from Inlog.models import User
